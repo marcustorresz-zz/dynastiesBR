@@ -11,12 +11,6 @@ pacman::p_load(tidyverse, httr, lubridate, hrbrthemes, janitor, #tesseract,
 ########################### Setting up Dir. ############################
 ########################################################################
 
-<<<<<<< HEAD
-=======
-
-setwd("/media/spinner/br_cand_docs/2020/txt")
-
->>>>>>> dadda76fb575883f72cfe2e4e49432acb85a5dd5
 
 setwd("/media/spinner/br_cand_docs/2020/txt")
 
@@ -30,15 +24,7 @@ setwd("/media/spinner/br_cand_docs/2020/txt")
 
 town_00019_01 <- readLines("00019/220000671881/15_1600384860519.txt") # PARENTS DATA FOUND!
 
-<<<<<<< HEAD
 match <- "Filiação|Filiacao|filiação|filiacao|Nome da mãe|Nome da mãe|Nome da mae|nome da mãe|nome da mae|Nome Mãe|Nome mae|Nome do pai|Nome do Pai|nome do pai|nome pai|Nome Pai|mãe|mae|Mae|Mãe|Pai|pai|filho de|Filho de|Filha de|filha de|Filho(a) de|filho(a) de"
-=======
-match <- "Filiação|Filiacao|filiação|filiacao|Nome da mãe|
-          Nome da mãe|Nome da mae|nome da mãe|nome da mae|Nome Mãe|Nome mae|
-          Nome do pai|Nome do Pai|nome do pai|nome pai|Nome Pai|
-          mãe|mae|Mae|Mãe|Pai|pai|
-          filho de|Filho de|Filha de|filha de|Filho(a) de|filho(a) de"
->>>>>>> dadda76fb575883f72cfe2e4e49432acb85a5dd5
 
 filiacao_line <- grepl(match, town_00019_01)
 
@@ -91,10 +77,6 @@ town_00035_04 <- matrix(c("Nome Mae", "Nome Pai", parents[2], parents[1]), 2,2)
 
 
 
-<<<<<<< HEAD
-=======
-
->>>>>>> dadda76fb575883f72cfe2e4e49432acb85a5dd5
 ########################## town_00035_05  ##############################
 
 filiacao_line <- grepl(match, town_00035_05)
@@ -111,7 +93,6 @@ town_00035_05 <- matrix(c("Nome Mae", "Nome Pai", parents[2], parents[1]), 2, 2)
 # [1,] "Nome Mae" "Elite Feitosa Brasil do Carmo"
 # [2,] "Nome Pai" "Valter José do Carmo"   
 
-<<<<<<< HEAD
 
 
 
@@ -145,11 +126,6 @@ parents <- c(parents[[1]])
 parents
 # [1] "SEBASTIAO JOSÉ DA SILVA FILHO" "ANA DE JESUS DA SILVA,"       
 
-=======
-
-
-
->>>>>>> dadda76fb575883f72cfe2e4e49432acb85a5dd5
 
 
 ########################################################################
@@ -175,17 +151,11 @@ filiacao <- unique(town_80896_02[filiacao_line == TRUE])
 
 # filiacao <- gsub("\\s+"," ",filiacao)
 
-<<<<<<< HEAD
 parents <- gsub(pattern = ".*: (.*)$", x = filiacao,
                 replacement = "\\1")
 
 parents
 
-=======
-parents <- gsub(pattern = ".* :(.*)$", x = filiacao,
-                replacement = "\\1")
-
->>>>>>> dadda76fb575883f72cfe2e4e49432acb85a5dd5
 
 
 ########################## town_80896_03  ##############################
@@ -196,7 +166,6 @@ filiacao <- unique(town_80896_03[filiacao_line == TRUE])
 
 # filiacao <- gsub("\\s+"," ",filiacao)
 
-<<<<<<< HEAD
 parents <- gsub(pattern = ".*: (.*)$", x = filiacao,
                 replacement = "\\1")
 
@@ -229,39 +198,6 @@ town_80896_04 <- matrix(c("Nome Mae", "Nome Pai", parents[1], parents[2]), 2, 2)
 
 
 
-=======
-parents <- gsub(pattern = ".* :(.*)$", x = filiacao,
-                replacement = "\\1")
-
-
-
-########################## town_80896_04  ##############################
-
-
-
-
-
-########################################################################
-###############################            #############################
-############################### TOWN 68390 #############################
-###############################            #############################
-########################################################################
-
-
-town_68390_02 <- readLines("68390/250001160406/13_1601006735581.txt")  # PARENTS DATA FOUND! 
-
-
-########################## 68390  ##############################
-
-filiacao_line <- grepl(match, town_68390_02)
-
-filiacao <- unique(town_68390_02[filiacao_line == TRUE])
-
-# filiacao <- gsub("\\s+"," ",filiacao)
-
-parents <- gsub(pattern = ".* :(.*)$", x = filiacao,
-                replacement = "\\1")
->>>>>>> dadda76fb575883f72cfe2e4e49432acb85a5dd5
 
 
 
