@@ -2,217 +2,238 @@
 ######################## Setting up Libraries ##########################
 ########################################################################
 
+
 if (!require("pacman")) install.packages("pacman")
 pacman::p_load(tidyverse, httr, lubridate, hrbrthemes, janitor, #tesseract,
-               quanteda, readtext, pdftools, stringr, RCurl)
+               quanteda, readtext, pdftools, stringr, RCurl, readxl)
 
 
 ########################################################################
 ########################### Setting up Dir. ############################
 ########################################################################
 
-
 setwd("/media/spinner/br_cand_docs/2020/txt")
 
 
 ########################################################################
-##############################             #############################
-############################## TOWN 00019  #############################
-##############################             #############################
+########## Loading Sample Files from RO WITH Parent Names ##############
 ########################################################################
 
 
-town_00019_01 <- readLines("00019/220000671881/15_1600384860519.txt") # PARENTS DATA FOUND!
+files <- c("00019/220000671881/15_1600384860519.txt",
+           "00035/220001081445/14_1601043802048.txt",
+           "00051/220000869882/14_1600718143702.txt",
+           "00078/220001190805/14_1600972302714.txt",
+           "00116/220000773053/13_1600741818781.txt",
+           "00159/220000667626/14_1599730865618.txt",
+           "00175/220001200095/pje-3b852f93-Certidão criminal da Justiça Estadual de 1º grau.txt",
+           "00191/220001056527/13_1600907660839.txt",
+           "00310/220001055240/14_1600997520913.txt",
+           "00337/220000745320/14_1600518366743.txt",
+           "00396/220000744299/14_1600708444384.txt",
+           "00035/220001081445/14_1601043802048.txt",
+           "00078/220001189299/15_1600548483174.txt",
+           "00159/220001130772/pje-730d8d60-Certidão criminal da Justiça Estadual de 2º grau.txt",
+           "00396/220001063464/pje-a3ad8580-Certidão criminal da Justiça Estadual de 1º grau.txt",
+           "00396/220001064639/12_1600992577678.txt",
+           "00434/220000636214/12_1599774979710.txt",
+           "00558/220000835374/15_1600814707856.txt",
+           "00574/220001213571/13_1601072113729.txt",
+           "00582/220000724827/13_1600518520633.txt",
+           "00582/220000917846/14_1600903668041.txt",
+           "00612/220000653996/11_1600304138632.txt",
+           "00612/220001108541/14_1601052681655.txt",
+           "00647/220000890308/pje-1abd71eb-Certidão criminal da Justiça Estadual de 2º grau.txt",
+           # "00655/220000663093/pje-1e931a45-Certidão criminal da Justiça Estadual de 2º grau.txt",
+           "00655/220000737426/14_1600454763067.txt",
+           "00663/220000650622/15_1600045951965.txt",
+           "00663/220000867126/14_1600783056905.txt",
+           "00663/220000936288/14_1600474999644.txt",
+           "00701/220000726899/13_1600565673794.txt",
+           "00701/220001063746/11_1600977761886.txt",
+           "00736/220000986873/14_1600646327789.txt",
+           "00809/220000639408/14_1599609318908.txt"
+)
 
-match <- "Filiação|Filiacao|filiação|filiacao|Nome da mãe|Nome da mãe|Nome da mae|nome da mãe|nome da mae|Nome Mãe|Nome mae|Nome do pai|Nome do Pai|nome do pai|nome pai|Nome Pai|mãe|mae|Mae|Mãe|Pai|pai|filho de|Filho de|Filha de|filha de|Filho(a) de|filho(a) de"
 
-filiacao_line <- grepl(match, town_00019_01)
+########################################################################
+###################### Declaring Main Function #########################
+########################################################################
 
-town_00019_01[filiacao_line == TRUE]
+## This function extracts parents from candidate PDFs from RO
+get_parents <- function(file) {
+  
+  txt <- readLines(file)
+  
+  if(sum(grepl("[Nn]ome [Mm][ãa]e", txt)) > 0 & sum(grepl("[Nn]ome [Pp]ai", txt)) > 0) {
+    mae <- gsub(".*:(.*)$", txt[grep("[Nn]ome [Mm][ãa]e", txt)], replacement = "\\1")[1]
+    pai <- gsub(".*[Nn]ome [Pp]ai(.*)$", txt[grep("[Nn]ome [Pp]ai", txt)], replacement = "\\1")[1]
+    result <- tibble(mae = str_trim(mae), pai = str_trim(pai))
+    result$pai = sub("[:,]", "", result$pai)
+    result$pai = sub("[.,]", "", result$pai)
+    result$pai = str_trim(result$pai)
+    result$mae = sub("[:,]", "", result$mae)
+    result$mae = sub("[.,]", "", result$mae)
+    result$mae = str_trim(result$mae)
+  }
+  
+  if(sum(grepl("[Ff][il]lia[çcg][ãa]o", txt)) > 0){
+    mae <- gsub(".*- (.*)$", txt[grep("Filiação", txt)], replacement = "\\1")[1]
+    pai <- gsub(".*- (.*)$", txt[grep("Filiação", txt) + 1], replacement = "\\1")[1]
+    result <- tibble(mae = mae, pai = pai)
+    result$pai = sub("[:,]", "", result$pai)
+    result$pai = sub("[.,]", "", result$pai)
+    result$pai = str_trim(result$pai)
+    result$mae = sub("[:,]", "", result$mae)
+    result$mae = sub("[.,]", "", result$mae)
+    result$mae = str_trim(result$mae)
+  }
+  
+  if(sum(grepl("Nome d[ao] M[ãa]e", txt)) > 0 & sum(grepl("Nome d[ao] Pai", txt)) > 0) {
+    mae <- gsub("Nome d[ao] M[ãa]e (.*)$", txt[grep("Nome d[ao] M[ãa]e", txt)], replacement = "\\1")[1]
+    pai <- gsub("Nome d[ao] Pai (.*)$", txt[grep("Nome d[ao] Pai", txt)], replacement = "\\1")[1]
+    mae <- str_remove(mae, ":")
+    pai <- str_remove(pai, ":")
+    result <- tibble(mae = str_trim(mae), pai = str_trim(pai))
+    result$pai = sub("[:,]", "", result$pai)
+    result$pai = sub("[.,]", "", result$pai)
+    result$pai = str_trim(result$pai)
+    result$mae = sub("[:,]", "", result$mae)
+    result$mae = sub("[.,]", "", result$mae)
+    result$mae = str_trim(result$mae)
+  }
+  
+  if(sum(grepl("MÃE", txt)) > 0 & sum(grepl("PAI", txt)) == 0){
+    mae <- gsub(".*:(.*)$", txt[grep("MÃE", txt)], replacement = "\\1")[1]
+    pai <- NA
+    result <- tibble(mae = str_trim(mae), pai = str_trim(pai))
+    result$pai = sub("[:,]", "", result$pai)
+    result$pai = sub("[.,]", "", result$pai)
+    result$pai = str_trim(result$pai)
+    result$mae = sub("[:,]", "", result$mae)
+    result$mae = sub("[.,]", "", result$mae)
+    result$mae = str_trim(result$mae)
+  }
+  
+  # if no parents' names available, return NAs for both.
+  if(exists("result") == FALSE){
+    mae <- NA
+    pai <- NA
+    result <- tibble(mae = str_trim(mae), pai = str_trim(pai))
+    result$pai = sub("[:,]", "", result$pai)
+    result$pai = sub("[.,]", "", result$pai)
+    result$pai = str_trim(result$pai)
+    result$mae = sub("[:,]", "", result$mae)
+    result$mae = sub("[.,]", "", result$mae)
+    result$mae = str_trim(result$mae)
+  }
+  
+  unique(result)
+}
 
-mae <- gsub(pattern = ".*: - (.*)$", x = town_00019_01[filiacao_line == TRUE],
-            replacement = "\\1")
 
-pai <- gsub(pattern = ".*- (.*)$", x = town_00019_01[which(filiacao_line == TRUE) + 1],
-            replacement = "\\1")
+## Run it one file
+get_parents(paste0("/media/spinner/br_cand_docs/2020/txt/", files[3]))
 
-town_00019_01 <- matrix(c("Nome Mae", "Nome Pai", mae, pai), 2,2)
-
-#       [,1]       [,2]                        
-# [1,] "Nome Mae" "ROSA LIMA DE OLIVEIRA"     
-# [2,] "Nome Pai" "RAIMUNDO PINTO DE OLIVEIRA"
+## Run it on all files
+RO_00019_parents <- map_df(paste0("/media/spinner/br_cand_docs/2020/txt/", files), get_parents)
 
 
+########################################################################
+######## Loading ALL Files from Rondonia to see what happens ###########
+########################################################################
+
+
+# Saving all files from all 52 folders within Rondonia
+
+all_files_rondonia <-   c( list.files("00019", recursive = T, full.name = T),
+                           list.files("00035", recursive = T, full.name = T),
+                           list.files("00051", recursive = T, full.name = T),
+                           list.files("00078", recursive = T, full.name = T),
+                           list.files("00094", recursive = T, full.name = T),
+                           list.files("00116", recursive = T, full.name = T),
+                           list.files("00132", recursive = T, full.name = T),
+                           list.files("00159", recursive = T, full.name = T),
+                           list.files("00175", recursive = T, full.name = T),
+                           list.files("00191", recursive = T, full.name = T),
+                           list.files("00213", recursive = T, full.name = T),
+                           list.files("00230", recursive = T, full.name = T),
+                           list.files("00256", recursive = T, full.name = T),
+                           list.files("00272", recursive = T, full.name = T),
+                           list.files("00299", recursive = T, full.name = T),
+                           list.files("00310", recursive = T, full.name = T),
+                           list.files("00337", recursive = T, full.name = T),
+                           list.files("00353", recursive = T, full.name = T),
+                           list.files("00370", recursive = T, full.name = T),
+                           list.files("00396", recursive = T, full.name = T),
+                           list.files("00418", recursive = T, full.name = T),
+                           list.files("00434", recursive = T, full.name = T),
+                           list.files("00450", recursive = T, full.name = T),
+                           list.files("00477", recursive = T, full.name = T),
+                           list.files("00493", recursive = T, full.name = T),
+                           list.files("00515", recursive = T, full.name = T),
+                           list.files("00531", recursive = T, full.name = T),
+                           list.files("00558", recursive = T, full.name = T),
+                           list.files("00566", recursive = T, full.name = T),
+                           list.files("00574", recursive = T, full.name = T),
+                           list.files("00582", recursive = T, full.name = T),
+                           list.files("00590", recursive = T, full.name = T),
+                           list.files("00604", recursive = T, full.name = T),
+                           list.files("00612", recursive = T, full.name = T),
+                           list.files("00620", recursive = T, full.name = T),
+                           list.files("00639", recursive = T, full.name = T),
+                           list.files("00647", recursive = T, full.name = T),
+                           list.files("00655", recursive = T, full.name = T),
+                           list.files("00663", recursive = T, full.name = T),
+                           list.files("00671", recursive = T, full.name = T),
+                           list.files("00680", recursive = T, full.name = T),
+                           list.files("00698", recursive = T, full.name = T),
+                           list.files("00701", recursive = T, full.name = T),
+                           list.files("00710", recursive = T, full.name = T),
+                           list.files("00728", recursive = T, full.name = T),
+                           list.files("00736", recursive = T, full.name = T),
+                           list.files("00744", recursive = T, full.name = T),
+                           list.files("00752", recursive = T, full.name = T),
+                           list.files("00779", recursive = T, full.name = T),
+                           list.files("00787", recursive = T, full.name = T),
+                           list.files("00795", recursive = T, full.name = T),
+                           list.files("00809", recursive = T, full.name = T)
+)
+
+
+# Running get_parents() every file available from Rondonia
+all_rondonia_parents <- unique(map_df(paste0("/media/spinner/br_cand_docs/2020/txt/", all_files_rondonia), get_parents))
+
+head(all_rondonia_parents, 9)
+
+
+# # A tibble: 9 x 2
+# mae                                pai                       
+# <chr>                              <chr>                     
+# 1 NA                                 NA                        
+# 2 ROSA LIMA DE OLIVEIRA              RAIMUNDO PINTO DE OLIVEIRA
+# 3 Alcimira de Souza Barbosa Alves    Adão José Alves           
+# 4 Elite Feitosa Brasil do Carmo      Valter José do Carmo      
+# 5 Glaucia Mendes da Silva Farias     Cesar Augusto Nunes Farias
+# 6 Gláucia Mendes da Silva Farias     César Augusto Nunes Farias
+# 7 Nely Rigo Pinto                    José Pinto                
+# 8 JOSELITA DOS ANJOS PINTO           JOAO BISPO PINTO          
+# 9 Lucineia Pereira Gonçalves Rezende Paulo Ferreira Rezende
 
 
 
 
 ########################################################################
-##############################            ##############################
-############################## TOWN 00035 ##############################
-##############################            ##############################
+########################################################################
+############### GETTING ALL DATA FROM ALL STATES #######################
+########################################################################
 ########################################################################
 
 
-town_00035_04 <- readLines("00035/220001081445/14_1601043802048.txt") # PARENTS DATA FOUND!
-town_00035_05 <- readLines("00035/220001082524/15_1601047417682.txt") # PARENTS DATA FOUND!
+all_parents_all_states <- list.files(recursive = T, full.name = T)
 
-
-
-########################## town_00035_04  ##############################
-
-filiacao_line <- grepl(match, town_00035_04)
-
-filiacao <- unique(town_00035_04[filiacao_line == TRUE])
-filiacao <- gsub("\\s+"," ",filiacao)
-
-parents <- unique(gsub(pattern = ".* :(.*)$", x = filiacao,
-                       replacement = "\\1"))
-
-town_00035_04 <- matrix(c("Nome Mae", "Nome Pai", parents[2], parents[1]), 2,2)
-
-#       [,1]       [,2]                             
-# [1,] "Nome Mae" "Alcimira de Souza Barbosa Alves"
-# [2,] "Nome Pai" "Adão José Alves"  
-
-
-
-########################## town_00035_05  ##############################
-
-filiacao_line <- grepl(match, town_00035_05)
-
-filiacao <- unique(town_00035_05[filiacao_line == TRUE])
-filiacao <- gsub("\\s+"," ",filiacao)
-
-parents <- unique(gsub(pattern = ".* :(.*)$", x = filiacao,
-                       replacement = "\\1"))
-
-town_00035_05 <- matrix(c("Nome Mae", "Nome Pai", parents[2], parents[1]), 2, 2)
-
-#       [,1]       [,2]                           
-# [1,] "Nome Mae" "Elite Feitosa Brasil do Carmo"
-# [2,] "Nome Pai" "Valter José do Carmo"   
-
-
-
-
-
-########################################################################
-###############################            #############################
-############################### TOWN 68390 #############################
-###############################            #############################
-########################################################################
-
-
-town_68390_02 <- readLines("68390/250001160406/13_1601006735581.txt")  # PARENTS DATA FOUND! 
-
-########################## town_68390_02  ##############################
-
-filiacao_line <- grepl(match, town_68390_02)
-
-filiacao <- unique(town_68390_02[filiacao_line == TRUE])
-filiacao
-
-# [1] "natural de Mirassol - SP, filho de SEBASTIAO JOSÉ DA SILVA FILHO e ANA DE JESUS DA SILVA,"
-
-parents <- gsub(pattern = "(\\S+)\\s.*filho de |filha de ", x = filiacao, replacement = "")
-parents
-
-# [1] "SEBASTIAO JOSÉ DA SILVA FILHO e ANA DE JESUS DA SILVA,"
-
-parents <- str_split(parents, " e ")
-parents <- c(parents[[1]])
-
-parents
-# [1] "SEBASTIAO JOSÉ DA SILVA FILHO" "ANA DE JESUS DA SILVA,"       
-
-
-
-########################################################################
-###############################            #############################
-############################### TOWN 80896 #############################
-###############################            #############################
-########################################################################
-
-
-town_80896_02 <- readLines("80896/240000981115/14_1600524737452.txt")  # PARENTS DATA FOUND! 
-town_80896_03 <- readLines("80896/240000982188/14_1600381085383.txt")  # PARENTS DATA FOUND! 
-town_80896_04 <- readLines("80896/240000982783/14_1600885691769.txt")  # PARENTS DATA FOUND! 
-town_80896_06 <- readLines("80896/240000987167/14_1600964947198.txt")  # PARENTS DATA FOUND! 
-town_80896_07 <- readLines("80896/240001158893/14_1601044521753.txt")  # PARENTS DATA FOUND!
-
-
-
-########################## town_80896_02  ##############################
-
-filiacao_line <- grepl(match, town_80896_02)
-
-filiacao <- unique(town_80896_02[filiacao_line == TRUE])
-
-# filiacao <- gsub("\\s+"," ",filiacao)
-
-parents <- gsub(pattern = ".*: (.*)$", x = filiacao,
-                replacement = "\\1")
-
-parents
-
-
-
-########################## town_80896_03  ##############################
-
-filiacao_line <- grepl(match, town_80896_03)
-
-filiacao <- unique(town_80896_03[filiacao_line == TRUE])
-
-# filiacao <- gsub("\\s+"," ",filiacao)
-
-parents <- gsub(pattern = ".*: (.*)$", x = filiacao,
-                replacement = "\\1")
-
-town_80896_03 <- matrix(c("Nome Mae", "Nome Pai", parents[1], parents[2]), 2, 2)
-
-#       [,1]       [,2]                         
-# [1,] "Nome Mae" "CARLA ROSANE PRATES PEDROSO"
-# [2,] "Nome Pai" "FERNANDO ZANATTA FILHO"
-
-########################## town_80896_04  ##############################
-
-filiacao_line <- grepl(match, town_80896_04)
-
-filiacao <- unique(town_80896_04[filiacao_line == TRUE])
-
-# filiacao <- gsub("\\s+"," ",filiacao)
-
-parents <- gsub(pattern = ".*: (.*)$", x = filiacao,
-                replacement = "\\1")
-
-town_80896_04 <- matrix(c("Nome Mae", "Nome Pai", parents[1], parents[2]), 2, 2)
-
-#       [,1]       [,2]                    
-# [1,] "Nome Mae" "Maria Zenaide da Silva"
-# [2,] "Nome Pai" "Ageu Antônio da Silva" 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+# This is running our function on A LOT of files, so will take some time.
+all_parents <- unique(map_df(all_parents_all_states, get_parents))
 
 
 
