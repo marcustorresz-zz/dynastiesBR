@@ -5,7 +5,7 @@
 
 if (!require("pacman")) install.packages("pacman")
 pacman::p_load(tidyverse, httr, lubridate, hrbrthemes, janitor, #tesseract,
-               quanteda, readtext, pdftools, stringr, RCurl, readxl)
+               quanteda, readtext, pdftools, stringr, RCurl, readxl, tm)
 
 
 ########################################################################
@@ -25,6 +25,7 @@ town_codes <- read.csv("https://raw.githubusercontent.com/marcustorresz/dynastie
 
 # RO
 town_code_ro <- sort(town_codes$codigo_tse[town_codes$uf == "RO"])
+town_code_ro <- str_pad(town_code_ro, 5, pad = "0")
 
 # BA
 town_code_ba <- sort(town_codes$codigo_tse[town_codes$uf == "BA"])
@@ -70,12 +71,29 @@ files <- c("00019/220000671881/15_1600384860519.txt",
            "00701/220001063746/11_1600977761886.txt",
            "00736/220000986873/14_1600646327789.txt",
            "00809/220000639408/14_1599609318908.txt"
-)
+          )
 
 
 ########################################################################
-###################### Declaring Main Function #########################
+###################### Declaring Main Functions ########################
 ########################################################################
+
+
+clean_function <- function(x) {
+  x$pai = sub("[:,]", "", x$pai)
+  x$pai = sub("[.,]", "", x$pai)
+  x$pai = sub("Filiação[ 2]", "", x$pai)
+  x$pai = sub("[Nn]ome d[eo] [Pp]ai", "", x$pai)
+  x$pai = str_trim(x$pai)
+  x$pai = tm::removeNumbers(x$pai)
+  x$mae = sub("[:,]", "", x$mae)
+  x$mae = sub("[.,]", "", x$mae)
+  x$mae = sub("Filiação[ 1]", "", x$mae)
+  x$mae = sub("[Nn]ome d[eoa] [Ma][ãa]e", "", x$mae)
+  x$mae = str_trim(x$mae)
+  x$mae = tm::removeNumbers(x$mae)
+  x = x
+}
 
 ## This function extracts parents from candidate PDFs from RO
 get_parents <- function(file) {
@@ -86,24 +104,12 @@ get_parents <- function(file) {
     mae <- gsub(".*:(.*)$", txt[grep("[Nn]ome [Mm][ãa]e", txt)], replacement = "\\1")[1]
     pai <- gsub(".*[Nn]ome [Pp]ai(.*)$", txt[grep("[Nn]ome [Pp]ai", txt)], replacement = "\\1")[1]
     result <- tibble(mae = str_trim(mae), pai = str_trim(pai))
-    result$pai = sub("[:,]", "", result$pai)
-    result$pai = sub("[.,]", "", result$pai)
-    result$pai = str_trim(result$pai)
-    result$mae = sub("[:,]", "", result$mae)
-    result$mae = sub("[.,]", "", result$mae)
-    result$mae = str_trim(result$mae)
   }
   
   if(sum(grepl("[Ff][il]lia[çcg][ãa]o", txt)) > 0){
     mae <- gsub(".*- (.*)$", txt[grep("Filiação", txt)], replacement = "\\1")[1]
     pai <- gsub(".*- (.*)$", txt[grep("Filiação", txt) + 1], replacement = "\\1")[1]
     result <- tibble(mae = mae, pai = pai)
-    result$pai = sub("[:,]", "", result$pai)
-    result$pai = sub("[.,]", "", result$pai)
-    result$pai = str_trim(result$pai)
-    result$mae = sub("[:,]", "", result$mae)
-    result$mae = sub("[.,]", "", result$mae)
-    result$mae = str_trim(result$mae)
   }
   
   if(sum(grepl("Nome d[ao] M[ãa]e", txt)) > 0 & sum(grepl("Nome d[ao] Pai", txt)) > 0) {
@@ -112,24 +118,20 @@ get_parents <- function(file) {
     mae <- str_remove(mae, ":")
     pai <- str_remove(pai, ":")
     result <- tibble(mae = str_trim(mae), pai = str_trim(pai))
-    result$pai = sub("[:,]", "", result$pai)
-    result$pai = sub("[.,]", "", result$pai)
-    result$pai = str_trim(result$pai)
-    result$mae = sub("[:,]", "", result$mae)
-    result$mae = sub("[.,]", "", result$mae)
-    result$mae = str_trim(result$mae)
   }
   
   if(sum(grepl("MÃE", txt)) > 0 & sum(grepl("PAI", txt)) == 0){
     mae <- gsub(".*:(.*)$", txt[grep("MÃE", txt)], replacement = "\\1")[1]
     pai <- NA
     result <- tibble(mae = str_trim(mae), pai = str_trim(pai))
-    result$pai = sub("[:,]", "", result$pai)
-    result$pai = sub("[.,]", "", result$pai)
-    result$pai = str_trim(result$pai)
-    result$mae = sub("[:,]", "", result$mae)
-    result$mae = sub("[.,]", "", result$mae)
-    result$mae = str_trim(result$mae)
+  }
+  
+  if(sum(grepl("[Ff]ilh[oa] [Dd][aoe]", txt)) > 0) {
+    mae <- gsub("[Ff]ilh[oa] [Dd][aoe] (.*)$", txt[grep("[Ff]ilh[oa] [Dd][aoe]", txt)], replacement = "\\1")[1]
+    pai <- gsub("[Ff]ilh[oa] [Dd][aoe] (.*)$", txt[grep("[Ff]ilh[oa] [Dd][aoe]", txt)], replacement = "\\1")[1]
+    mae <- str_remove(mae, ":")
+    pai <- str_remove(pai, ":")
+    result <- tibble(mae = str_trim(mae), pai = str_trim(pai))
   }
   
   # if no parents' names available, return NAs for both.
@@ -137,103 +139,83 @@ get_parents <- function(file) {
     mae <- NA
     pai <- NA
     result <- tibble(mae = str_trim(mae), pai = str_trim(pai))
-    #result$pai = sub("[:,]", "", result$pai)
-    #result$pai = sub("[.,]", "", result$pai)
-    #result$pai = str_trim(result$pai)
-    #result$mae = sub("[:,]", "", result$mae)
-    #result$mae = sub("[.,]", "", result$mae)
-    #result$mae = str_trim(result$mae)
   }
   
-  unique(result)
+  unique(clean_function(result))
 }
 
 
 ## Run it one file
-get_parents(paste0("/media/spinner/br_cand_docs/2020/txt/", files[3]))
+get_parents(paste0("/media/spinner/br_cand_docs/2020/txt/", files[2]))
 
 ## Run it on all files
 RO_00019_parents <- map_df(paste0("/media/spinner/br_cand_docs/2020/txt/", files), get_parents)
 
 
+
 ########################################################################
-######## Loading ALL Files from Rondonia to see what happens ###########
+########################################################################
+################ RUNNING FUNCTION ON ALL STATES ########################
+########################################################################
+########################################################################
+
+
+all_parents_all_states <- list.files(recursive = T, full.name = T)
+
+# This is running our function on A LOT of files, so will take some time.
+all_parents <- unique(
+                  map_df(all_parents_all_states, get_parents)
+                  )
+
+
+head(all_parents)
+# # A tibble: 6 x 2
+# mae                               pai                       
+# <chr>                             <chr>                     
+# 1 NA                              NA                        
+# 2 ROSA LIMA DE OLIVEIRA           RAIMUNDO PINTO DE OLIVEIRA
+# 3 Alcimira de Souza Barbosa Alves Adão José Alves           
+# 4 Elite Feitosa Brasil do Carmo   Valter José do Carmo      
+# 5 Glaucia Mendes da Silva Farias  Cesar Augusto Nunes Farias
+# 6 Gláucia Mendes da Silva Farias  César Augusto Nunes Farias
+
+
+tail(all_parents)
+# # A tibble: 6 x 2 
+# mae                                                                              pai                                                                              
+# <chr>                                                                            <chr>                                                                            
+# 1 MARIA LOPES MIRANDA                                                            FRANCISCO LOPES DE SOUSA                                                         
+# 2 MARIA GLAE MOREIRA FREITAS                                                     ANTONIO MATIAS FREITAS                                                           
+# 3 MARIA BEZERRA NETA                                                             FRANCISCO PAIVA MONTE                                                            
+# 4 imóveis existentes em nome de MAURICIO JOEL DE SÁ Cpf: 60477148972 Rg: 395514… Helena Garbugio de Sá casado(a) engenheiro agrônomo, Endereço: Rua Macário Subti…
+# 5 ILAIDES MARIA DOS REIS                                                         FUAD JULIEN                                                                      
+# 6 LIDIA BORGES DA SILVEIRA                                                       JOAO ANTONIO DA SILVEIRA    
+
+
+
+########################################################################
+########################################################################
+################# RUNNING FUNCTION ON RONDONIA #########################
+########################################################################
 ########################################################################
 
 
 # Saving all files from all 52 folders within Rondonia
+all_files_rondonia = c()
 
-# all_files_rondonia = c()
-# 
-# for ( i in 0:length(town_code_ro) ){
-#   town_code_ro[i] = toString(town_code_ro[i])
-#   all_files_rondonia = c( all_files_rondonia, c(list.files(town_code_ro[i], recursive = T, full.name = T) ) )
-# }
-
-all_files_rondonia <-   c( list.files("00019", recursive = T, full.name = T),
-                           list.files("00035", recursive = T, full.name = T),
-                           list.files("00051", recursive = T, full.name = T),
-                           list.files("00078", recursive = T, full.name = T),
-                           list.files("00094", recursive = T, full.name = T),
-                           list.files("00116", recursive = T, full.name = T),
-                           list.files("00132", recursive = T, full.name = T),
-                           list.files("00159", recursive = T, full.name = T),
-                           list.files("00175", recursive = T, full.name = T),
-                           list.files("00191", recursive = T, full.name = T),
-                           list.files("00213", recursive = T, full.name = T),
-                           list.files("00230", recursive = T, full.name = T),
-                           list.files("00256", recursive = T, full.name = T),
-                           list.files("00272", recursive = T, full.name = T),
-                           list.files("00299", recursive = T, full.name = T),
-                           list.files("00310", recursive = T, full.name = T),
-                           list.files("00337", recursive = T, full.name = T),
-                           list.files("00353", recursive = T, full.name = T),
-                           list.files("00370", recursive = T, full.name = T),
-                           list.files("00396", recursive = T, full.name = T),
-                           list.files("00418", recursive = T, full.name = T),
-                           list.files("00434", recursive = T, full.name = T),
-                           list.files("00450", recursive = T, full.name = T),
-                           list.files("00477", recursive = T, full.name = T),
-                           list.files("00493", recursive = T, full.name = T),
-                           list.files("00515", recursive = T, full.name = T),
-                           list.files("00531", recursive = T, full.name = T),
-                           list.files("00558", recursive = T, full.name = T),
-                           list.files("00566", recursive = T, full.name = T),
-                           list.files("00574", recursive = T, full.name = T),
-                           list.files("00582", recursive = T, full.name = T),
-                           list.files("00590", recursive = T, full.name = T),
-                           list.files("00604", recursive = T, full.name = T),
-                           list.files("00612", recursive = T, full.name = T),
-                           list.files("00620", recursive = T, full.name = T),
-                           list.files("00639", recursive = T, full.name = T),
-                           list.files("00647", recursive = T, full.name = T),
-                           list.files("00655", recursive = T, full.name = T),
-                           list.files("00663", recursive = T, full.name = T),
-                           list.files("00671", recursive = T, full.name = T),
-                           list.files("00680", recursive = T, full.name = T),
-                           list.files("00698", recursive = T, full.name = T),
-                           list.files("00701", recursive = T, full.name = T),
-                           list.files("00710", recursive = T, full.name = T),
-                           list.files("00728", recursive = T, full.name = T),
-                           list.files("00736", recursive = T, full.name = T),
-                           list.files("00744", recursive = T, full.name = T),
-                           list.files("00752", recursive = T, full.name = T),
-                           list.files("00779", recursive = T, full.name = T),
-                           list.files("00787", recursive = T, full.name = T),
-                           list.files("00795", recursive = T, full.name = T),
-                           list.files("00809", recursive = T, full.name = T)
-)
+for (i in 0:length(town_code_ro)){
+  town_code_ro[i] = toString(town_code_ro[i])
+  all_files_rondonia = c(all_files_rondonia, c(list.files(town_code_ro[i], recursive = T, full.name = T)))
+}
 
 
 # Running get_parents() on every file available from Rondonia
 all_rondonia_parents <- unique(
-  map_df(paste0("/media/spinner/br_cand_docs/2020/txt/", all_files_rondonia), get_parents
-  )
-)
+                          map_df(paste0("/media/spinner/br_cand_docs/2020/txt/", all_files_rondonia), get_parents)
+                          )
 
-head(all_rondonia_parents, 9)
-
-
+head(all_rondonia_parents)
+ 
 # # A tibble: 9 x 2
 # mae                                  pai                       
 # <chr>                                <chr>                     
@@ -243,85 +225,113 @@ head(all_rondonia_parents, 9)
 # 4 Elite Feitosa Brasil do Carmo      Valter José do Carmo      
 # 5 Glaucia Mendes da Silva Farias     Cesar Augusto Nunes Farias
 # 6 Gláucia Mendes da Silva Farias     César Augusto Nunes Farias
-# 7 Nely Rigo Pinto                    José Pinto                
-# 8 JOSELITA DOS ANJOS PINTO           JOAO BISPO PINTO          
-# 9 Lucineia Pereira Gonçalves Rezende Paulo Ferreira Rezende
+
 
 
 
 ########################################################################
 ########################################################################
-############### GETTING ALL DATA FROM ALL STATES #######################
+################### RUNNING FUNCTION ON BAHIA ##########################
 ########################################################################
 ########################################################################
 
 
-all_parents_all_states <- list.files(recursive = T, full.name = T)
-
-# This is running our function on A LOT of files, so will take some time.
-all_parents <- unique(
-  map_df(
-    all_parents_all_states, get_parents
-  )
-)
-
-head(all_parents)
-tail(all_parents)
-
-
-########################################################################
-########################################################################
-################## GETTING ALL DATA FROM BAHIA #########################
-########################################################################
-########################################################################
-
-
+# Declaring all files from Bahia using a FOR LOOP
 all_files_bahia = c()
 
-for ( i in 0:length(town_code_ba) ){
+for (i in 0:length(town_code_ba)){
   town_code_ba[i] = toString(town_code_ba[i])
-  all_files_bahia = c( all_files_bahia, c(list.files(town_code_ba[i], recursive = T, full.name = T) ) )
+  all_files_bahia = c(all_files_bahia, c(list.files(town_code_ba[i], recursive = T, full.name = T)))
 }
-
 
 head(all_files_bahia)
 tail(all_files_bahia)
 
+
 # Running get_parents() on every file available from Bahia
 all_bahia_parents <- unique(
-  map_df(paste0("/media/spinner/br_cand_docs/2020/txt/", all_files_bahia), get_parents
-  )
-)
+                        map_df(paste0("/media/spinner/br_cand_docs/2020/txt/", all_files_bahia), get_parents
+                       )
+                    )
 
-head(all_bahia_parents, 9)
+head(all_bahia_parents)
 # 
-# # A tibble: 9 x 2
-# mae                                     pai                                       
-# <chr>                                   <chr>                                     
-# 1 NA                                    NA                                        
-# 2 Filiação 1 WASHINGTON DUQUE DE RANGEL Filiação 2 MARIA BERNADETH REBOUÇAS RANGEL
-# 3 Filiação 1 MIRIAM SILVA SOUZA BORGES  Filiação 2 ONDUMAR FERREIRA BORGES        
-# 4 Filiação 1 Jose Joaquim De Oliveira   Filiação 2 Odete Alves De Oliveira        
-# 5 Filiação 1 JOSE LIMA ALMEIDA          Filiação 2 GISELIA TORRES DE ALMEIDA      
-# 6 Filiação 1 ZULMIRA VENTURINI CHECON   Filiação 2 NELSON CHECON                  
-# 7 Filiação 1 Adelice Santos Joaquim     Filiação 2 José Joaquim Filho             
-# 8 Filiação 1 Alzira Batista de Oliveira Filiação 2 Antonio Batista dos Santos     
-# 9 Filiação 1 PEDRO PIRES NOGUEIRA       Filiação 2 NILVANDA FERREIRA DE SOUZA     
+# # A tibble: 6- x 2
+# mae                          pai                                       
+# <chr>                        <chr>                                     
+# 1 NA                         NA                             
+# 2 WASHINGTON DUQUE DE RANGEL MARIA BERNADETH REBOUÇAS RANGEL
+# 3 MIRIAM SILVA SOUZA BORGES  ONDUMAR FERREIRA BORGES        
+# 4 Jose Joaquim De Oliveira   Odete Alves De Oliveira        
+# 5 JOSE LIMA ALMEIDA          GISELIA TORRES DE ALMEIDA      
+# 6 ZULMIRA VENTURINI CHECON   NELSON CHECON                
 
-tail(all_bahia_parents, 9)
+tail(all_bahia_parents)
 # 
-# # A tibble: 9 x 2
-# mae                                        pai                                  
-# <chr>                                      <chr>                                
-# 1 Filiação 1 SILEUZA SANTOS SALES RIOS     Filiação 2 DERALDO SALES RIOS        
-# 2 Filiação 1 Josias de Souza Rios          Filiação 2 Judite dos Santos Rios    
-# 3 Filiação 1 Oldaque de Souza Rios         Filiação 2 Anatilde de Oliveira Rios 
-# 4 Filiação 1 MARINALVA ALEXANDRE BARBOSA   Filiação 2                           
-# 5 Filiação 1 tereza joana do nascimento    Filiação 2 luis pedro do nascimento  
-# 6 Filiação 1 FRANCISCO ANTONIO BENTO       Filiação 2 CLEUSA GOMES SAMPAIO BENTO
-# 7 Filiação 1 MARIA PEREIRA RIBEIRO         Filiação 2 CELSO FRANCISCO RIBEIRO   
-# 8 Filiação 1 CLEONISSE CRISOSTOMO DA SILVA Filiação 2 ANTÔNIO ALDINO SÁ TELES   
-# 9 Filiação 1 CLEONISSE CRISÓSTOMO DA SILVA Filiação 2 ANTÔNIO ALDINO SÁ TELES   
+# # A tibble: 6 x 2
+# mae                             pai                                  
+# <chr>                           <chr>                                
+# 1 MARINALVA ALEXANDRE BARBOSA   ""                          
+# 2 tereza joana do nascimento    "luis pedro do nascimento"  
+# 3 FRANCISCO ANTONIO BENTO       "CLEUSA GOMES SAMPAIO BENTO"
+# 4 MARIA PEREIRA RIBEIRO         "CELSO FRANCISCO RIBEIRO"   
+# 5 CLEONISSE CRISOSTOMO DA SILVA "ANTÔNIO ALDINO SÁ TELES"   
+# 6 CLEONISSE CRISÓSTOMO DA SILVA "ANTÔNIO ALDINO SÁ TELES" 
+
+
+
+
+########################################################################
+########################################################################
+################# RUNNING FUNCTION ON SAO PAULO ########################
+########################################################################
+########################################################################
+
+
+# Declaring all files from sp using a FOR LOOP
+all_files_sp = c()
+
+for ( i in 0:length(town_code_sp) ){
+  town_code_sp[i] = toString(town_code_sp[i])
+  all_files_sp = c( all_files_sp, c(list.files(town_code_sp[i], recursive = T, full.name = T) ) )
+}
+
+head(all_files_sp)
+tail(all_files_sp)
+
+
+# Running get_parents() on every file available from sp
+all_sp_parents <- unique(
+                    map_df(paste0("/media/spinner/br_cand_docs/2020/txt/", all_files_sp), get_parents)
+                  )
+
+head(all_sp_parents)
+
+
+########################################################################
+########################################################################
+################# RUNNING FUNCTION ON           ########################
+########################################################################
+########################################################################
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
