@@ -1,3 +1,297 @@
+
+Save New Duplicate & Edit Just Text Twitter
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+78
+79
+80
+81
+82
+83
+84
+85
+86
+87
+88
+89
+90
+91
+92
+93
+94
+95
+96
+97
+98
+99
+100
+101
+102
+103
+104
+105
+106
+107
+108
+109
+110
+111
+112
+113
+114
+115
+116
+117
+118
+119
+120
+121
+122
+123
+124
+125
+126
+127
+128
+129
+130
+131
+132
+133
+134
+135
+136
+137
+138
+139
+140
+141
+142
+143
+144
+145
+146
+147
+148
+149
+150
+151
+152
+153
+154
+155
+156
+157
+158
+159
+160
+161
+162
+163
+164
+165
+166
+167
+168
+169
+170
+171
+172
+173
+174
+175
+176
+177
+178
+179
+180
+181
+182
+183
+184
+185
+186
+187
+188
+189
+190
+191
+192
+193
+194
+195
+196
+197
+198
+199
+200
+201
+202
+203
+204
+205
+206
+207
+208
+209
+210
+211
+212
+213
+214
+215
+216
+217
+218
+219
+220
+221
+222
+223
+224
+225
+226
+227
+228
+229
+230
+231
+232
+233
+234
+235
+236
+237
+238
+239
+240
+241
+242
+243
+244
+245
+246
+247
+248
+249
+250
+251
+252
+253
+254
+255
+256
+257
+258
+259
+260
+261
+262
+263
+264
+265
+266
+267
+268
+269
+270
+271
+272
+273
+274
+275
+276
+277
+278
+279
+280
+281
+282
+283
+284
+285
+286
+287
+288
+289
+290
+291
+292
 ########################################################################
 ######################## Setting up Libraries ##########################
 ########################################################################
@@ -103,13 +397,13 @@ get_parents <- function(file) {
   if(sum(grepl("[Nn]ome [Mm][ãa]e", txt)) > 0 & sum(grepl("[Nn]ome [Pp]ai", txt)) > 0) {
     mae <- gsub(".*:(.*)$", txt[grep("[Nn]ome [Mm][ãa]e", txt)], replacement = "\\1")[1]
     pai <- gsub(".*[Nn]ome [Pp]ai(.*)$", txt[grep("[Nn]ome [Pp]ai", txt)], replacement = "\\1")[1]
-    result <- tibble(mae = str_trim(mae), pai = str_trim(pai))
+    result <- tibble(mae = str_trim(mae), pai = str_trim(pai), town = str_match(file, "./(.*?)/")[2], candidate = gsub(".*./.*/([0-9]{1,})/.*", replacement = "\\1", x = file))
   }
   
   if(sum(grepl("[Ff][il]lia[çcg][ãa]o", txt)) > 0){
     mae <- gsub(".*- (.*)$", txt[grep("Filiação", txt)], replacement = "\\1")[1]
     pai <- gsub(".*- (.*)$", txt[grep("Filiação", txt) + 1], replacement = "\\1")[1]
-    result <- tibble(mae = mae, pai = pai)
+    result <- tibble(mae = mae, pai = pai, town = str_match(file, "./(.*?)/")[2], candidate = gsub(".*./.*/([0-9]{1,})/.*", replacement = "\\1", x = file))
   }
   
   if(sum(grepl("Nome d[ao] M[ãa]e", txt)) > 0 & sum(grepl("Nome d[ao] Pai", txt)) > 0) {
@@ -117,13 +411,13 @@ get_parents <- function(file) {
     pai <- gsub("Nome d[ao] Pai (.*)$", txt[grep("Nome d[ao] Pai", txt)], replacement = "\\1")[1]
     mae <- str_remove(mae, ":")
     pai <- str_remove(pai, ":")
-    result <- tibble(mae = str_trim(mae), pai = str_trim(pai))
+    result <- tibble(mae = str_trim(mae), pai = str_trim(pai), town = str_match(file, "./(.*?)/")[2], candidate = gsub(".*./.*/([0-9]{1,})/.*", replacement = "\\1", x = file))
   }
   
   if(sum(grepl("MÃE", txt)) > 0 & sum(grepl("PAI", txt)) == 0){
     mae <- gsub(".*:(.*)$", txt[grep("MÃE", txt)], replacement = "\\1")[1]
     pai <- NA
-    result <- tibble(mae = str_trim(mae), pai = str_trim(pai))
+    result <- tibble(mae = str_trim(mae), pai = str_trim(pai), town = str_match(file, "./(.*?)/")[2], candidate = gsub(".*./.*/([0-9]{1,})/.*", replacement = "\\1", x = file))
   }
   
   if(sum(grepl("[Ff]ilh[oa] [Dd][aoe]", txt)) > 0) {
@@ -131,17 +425,18 @@ get_parents <- function(file) {
     pai <- gsub("[Ff]ilh[oa] [Dd][aoe] (.*)$", txt[grep("[Ff]ilh[oa] [Dd][aoe]", txt)], replacement = "\\1")[1]
     mae <- str_remove(mae, ":")
     pai <- str_remove(pai, ":")
-    result <- tibble(mae = str_trim(mae), pai = str_trim(pai))
+    result <- tibble(mae = str_trim(mae), pai = str_trim(pai), town = str_match(file, "./(.*?)/")[2], candidate = gsub(".*./.*/([0-9]{1,})/.*", replacement = "\\1", x = file))
   }
   
   # if no parents' names available, return NAs for both.
   if( !exists("result") ){
     mae <- NA
     pai <- NA
-    result <- tibble(mae = str_trim(mae), pai = str_trim(pai))
+    result <- tibble(mae = str_trim(mae), pai = str_trim(pai), town = NA, candidate = NA)
   }
   
   unique(clean_function(result))
+  # print(file)
 }
 
 
@@ -169,27 +464,9 @@ all_parents <- unique(
 
 
 head(all_parents)
-# # A tibble: 6 x 2
-# mae                               pai                       
-# <chr>                             <chr>                     
-# 1 NA                              NA                        
-# 2 ROSA LIMA DE OLIVEIRA           RAIMUNDO PINTO DE OLIVEIRA
-# 3 Alcimira de Souza Barbosa Alves Adão José Alves           
-# 4 Elite Feitosa Brasil do Carmo   Valter José do Carmo      
-# 5 Glaucia Mendes da Silva Farias  Cesar Augusto Nunes Farias
-# 6 Gláucia Mendes da Silva Farias  César Augusto Nunes Farias
 
 
 tail(all_parents)
-# # A tibble: 6 x 2 
-# mae                                                                              pai                                                                              
-# <chr>                                                                            <chr>                                                                            
-# 1 MARIA LOPES MIRANDA                                                            FRANCISCO LOPES DE SOUSA                                                         
-# 2 MARIA GLAE MOREIRA FREITAS                                                     ANTONIO MATIAS FREITAS                                                           
-# 3 MARIA BEZERRA NETA                                                             FRANCISCO PAIVA MONTE                                                            
-# 4 imóveis existentes em nome de MAURICIO JOEL DE SÁ Cpf: 60477148972 Rg: 395514… Helena Garbugio de Sá casado(a) engenheiro agrônomo, Endereço: Rua Macário Subti…
-# 5 ILAIDES MARIA DOS REIS                                                         FUAD JULIEN                                                                      
-# 6 LIDIA BORGES DA SILVEIRA                                                       JOAO ANTONIO DA SILVEIRA    
 
 
 
@@ -215,17 +492,6 @@ all_rondonia_parents <- unique(
                           )
 
 head(all_rondonia_parents)
- 
-# # A tibble: 9 x 2
-# mae                                  pai                       
-# <chr>                                <chr>                     
-# 1 NA                                 NA                        
-# 2 ROSA LIMA DE OLIVEIRA              RAIMUNDO PINTO DE OLIVEIRA
-# 3 Alcimira de Souza Barbosa Alves    Adão José Alves           
-# 4 Elite Feitosa Brasil do Carmo      Valter José do Carmo      
-# 5 Glaucia Mendes da Silva Farias     Cesar Augusto Nunes Farias
-# 6 Gláucia Mendes da Silva Farias     César Augusto Nunes Farias
-
 
 
 
@@ -250,34 +516,13 @@ tail(all_files_bahia)
 
 # Running get_parents() on every file available from Bahia
 all_bahia_parents <- unique(
-                        map_df(paste0("/media/spinner/br_cand_docs/2020/txt/", all_files_bahia), get_parents
-                       )
+                        map_df(paste0("/media/spinner/br_cand_docs/2020/txt/", all_files_bahia), get_parents)
                     )
 
 head(all_bahia_parents)
-# 
-# # A tibble: 6- x 2
-# mae                          pai                                       
-# <chr>                        <chr>                                     
-# 1 NA                         NA                             
-# 2 WASHINGTON DUQUE DE RANGEL MARIA BERNADETH REBOUÇAS RANGEL
-# 3 MIRIAM SILVA SOUZA BORGES  ONDUMAR FERREIRA BORGES        
-# 4 Jose Joaquim De Oliveira   Odete Alves De Oliveira        
-# 5 JOSE LIMA ALMEIDA          GISELIA TORRES DE ALMEIDA      
-# 6 ZULMIRA VENTURINI CHECON   NELSON CHECON                
+
 
 tail(all_bahia_parents)
-# 
-# # A tibble: 6 x 2
-# mae                             pai                                  
-# <chr>                           <chr>                                
-# 1 MARINALVA ALEXANDRE BARBOSA   ""                          
-# 2 tereza joana do nascimento    "luis pedro do nascimento"  
-# 3 FRANCISCO ANTONIO BENTO       "CLEUSA GOMES SAMPAIO BENTO"
-# 4 MARIA PEREIRA RIBEIRO         "CELSO FRANCISCO RIBEIRO"   
-# 5 CLEONISSE CRISOSTOMO DA SILVA "ANTÔNIO ALDINO SÁ TELES"   
-# 6 CLEONISSE CRISÓSTOMO DA SILVA "ANTÔNIO ALDINO SÁ TELES" 
-
 
 
 
@@ -313,7 +558,6 @@ head(all_sp_parents)
 ################# RUNNING FUNCTION ON           ########################
 ########################################################################
 ########################################################################
-
 
 
 
