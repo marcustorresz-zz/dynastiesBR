@@ -369,11 +369,6 @@ gsub(pattern = "",
  
  
  #### TJ MA ##
- 
- 
- 
- 
- 
  filia <- tesseract::ocr("https://divulgacandcontas.tse.jus.br/candidaturas/oficial/2020/MA/09210/426/candidatos/500873/14_1600747134001.pdf", engine = por)%>% 
    str_split (pattern ="\n") %>% unlist()
  cat(filia)
