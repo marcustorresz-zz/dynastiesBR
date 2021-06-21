@@ -15,6 +15,23 @@ pacman::p_load(tidyverse, httr, lubridate, hrbrthemes, janitor, #tesseract,
 setwd("/media/spinner/br_cand_docs/2020/txt")
 
 
+# Reading Town Code CSVs from GitHub into R
+town_codes <- read.csv("https://raw.githubusercontent.com/marcustorresz/dynastiesBR/master/town_codes.csv")
+
+
+########################################################################
+######################## Finding State Codes ###########################
+########################################################################
+
+# RO
+town_code_ro <- sort(town_codes$codigo_tse[town_codes$uf == "RO"])
+
+# BA
+town_code_ba <- sort(town_codes$codigo_tse[town_codes$uf == "BA"])
+
+# SP
+town_code_sp <- sort(town_codes$codigo_tse[town_codes$uf == "SP"])
+
 ########################################################################
 ########## Loading Sample Files from RO WITH Parent Names ##############
 ########################################################################
@@ -116,16 +133,16 @@ get_parents <- function(file) {
   }
   
   # if no parents' names available, return NAs for both.
-  if(exists("result") == FALSE){
+  if( !exists("result") ){
     mae <- NA
     pai <- NA
     result <- tibble(mae = str_trim(mae), pai = str_trim(pai))
-    result$pai = sub("[:,]", "", result$pai)
-    result$pai = sub("[.,]", "", result$pai)
-    result$pai = str_trim(result$pai)
-    result$mae = sub("[:,]", "", result$mae)
-    result$mae = sub("[.,]", "", result$mae)
-    result$mae = str_trim(result$mae)
+    #result$pai = sub("[:,]", "", result$pai)
+    #result$pai = sub("[.,]", "", result$pai)
+    #result$pai = str_trim(result$pai)
+    #result$mae = sub("[:,]", "", result$mae)
+    #result$mae = sub("[.,]", "", result$mae)
+    #result$mae = str_trim(result$mae)
   }
   
   unique(result)
@@ -145,6 +162,13 @@ RO_00019_parents <- map_df(paste0("/media/spinner/br_cand_docs/2020/txt/", files
 
 
 # Saving all files from all 52 folders within Rondonia
+
+# all_files_rondonia = c()
+# 
+# for ( i in 0:length(town_code_ro) ){
+#   town_code_ro[i] = toString(town_code_ro[i])
+#   all_files_rondonia = c( all_files_rondonia, c(list.files(town_code_ro[i], recursive = T, full.name = T) ) )
+# }
 
 all_files_rondonia <-   c( list.files("00019", recursive = T, full.name = T),
                            list.files("00035", recursive = T, full.name = T),
@@ -201,15 +225,18 @@ all_files_rondonia <-   c( list.files("00019", recursive = T, full.name = T),
 )
 
 
-# Running get_parents() every file available from Rondonia
-all_rondonia_parents <- unique(map_df(paste0("/media/spinner/br_cand_docs/2020/txt/", all_files_rondonia), get_parents))
+# Running get_parents() on every file available from Rondonia
+all_rondonia_parents <- unique(
+  map_df(paste0("/media/spinner/br_cand_docs/2020/txt/", all_files_rondonia), get_parents
+  )
+)
 
 head(all_rondonia_parents, 9)
 
 
 # # A tibble: 9 x 2
-# mae                                pai                       
-# <chr>                              <chr>                     
+# mae                                  pai                       
+# <chr>                                <chr>                     
 # 1 NA                                 NA                        
 # 2 ROSA LIMA DE OLIVEIRA              RAIMUNDO PINTO DE OLIVEIRA
 # 3 Alcimira de Souza Barbosa Alves    Adão José Alves           
@@ -219,7 +246,6 @@ head(all_rondonia_parents, 9)
 # 7 Nely Rigo Pinto                    José Pinto                
 # 8 JOSELITA DOS ANJOS PINTO           JOAO BISPO PINTO          
 # 9 Lucineia Pereira Gonçalves Rezende Paulo Ferreira Rezende
-
 
 
 
@@ -233,8 +259,69 @@ head(all_rondonia_parents, 9)
 all_parents_all_states <- list.files(recursive = T, full.name = T)
 
 # This is running our function on A LOT of files, so will take some time.
-all_parents <- unique(map_df(all_parents_all_states, get_parents))
+all_parents <- unique(
+  map_df(
+    all_parents_all_states, get_parents
+  )
+)
 
+head(all_parents)
+tail(all_parents)
+
+
+########################################################################
+########################################################################
+################## GETTING ALL DATA FROM BAHIA #########################
+########################################################################
+########################################################################
+
+
+all_files_bahia = c()
+
+for ( i in 0:length(town_code_ba) ){
+  town_code_ba[i] = toString(town_code_ba[i])
+  all_files_bahia = c( all_files_bahia, c(list.files(town_code_ba[i], recursive = T, full.name = T) ) )
+}
+
+
+head(all_files_bahia)
+tail(all_files_bahia)
+
+# Running get_parents() on every file available from Bahia
+all_bahia_parents <- unique(
+  map_df(paste0("/media/spinner/br_cand_docs/2020/txt/", all_files_bahia), get_parents
+  )
+)
+
+head(all_bahia_parents, 9)
+# 
+# # A tibble: 9 x 2
+# mae                                     pai                                       
+# <chr>                                   <chr>                                     
+# 1 NA                                    NA                                        
+# 2 Filiação 1 WASHINGTON DUQUE DE RANGEL Filiação 2 MARIA BERNADETH REBOUÇAS RANGEL
+# 3 Filiação 1 MIRIAM SILVA SOUZA BORGES  Filiação 2 ONDUMAR FERREIRA BORGES        
+# 4 Filiação 1 Jose Joaquim De Oliveira   Filiação 2 Odete Alves De Oliveira        
+# 5 Filiação 1 JOSE LIMA ALMEIDA          Filiação 2 GISELIA TORRES DE ALMEIDA      
+# 6 Filiação 1 ZULMIRA VENTURINI CHECON   Filiação 2 NELSON CHECON                  
+# 7 Filiação 1 Adelice Santos Joaquim     Filiação 2 José Joaquim Filho             
+# 8 Filiação 1 Alzira Batista de Oliveira Filiação 2 Antonio Batista dos Santos     
+# 9 Filiação 1 PEDRO PIRES NOGUEIRA       Filiação 2 NILVANDA FERREIRA DE SOUZA     
+
+tail(all_bahia_parents, 9)
+# 
+# # A tibble: 9 x 2
+# mae                                        pai                                  
+# <chr>                                      <chr>                                
+# 1 Filiação 1 SILEUZA SANTOS SALES RIOS     Filiação 2 DERALDO SALES RIOS        
+# 2 Filiação 1 Josias de Souza Rios          Filiação 2 Judite dos Santos Rios    
+# 3 Filiação 1 Oldaque de Souza Rios         Filiação 2 Anatilde de Oliveira Rios 
+# 4 Filiação 1 MARINALVA ALEXANDRE BARBOSA   Filiação 2                           
+# 5 Filiação 1 tereza joana do nascimento    Filiação 2 luis pedro do nascimento  
+# 6 Filiação 1 FRANCISCO ANTONIO BENTO       Filiação 2 CLEUSA GOMES SAMPAIO BENTO
+# 7 Filiação 1 MARIA PEREIRA RIBEIRO         Filiação 2 CELSO FRANCISCO RIBEIRO   
+# 8 Filiação 1 CLEONISSE CRISOSTOMO DA SILVA Filiação 2 ANTÔNIO ALDINO SÁ TELES   
+# 9 Filiação 1 CLEONISSE CRISÓSTOMO DA SILVA Filiação 2 ANTÔNIO ALDINO SÁ TELES   
 
 
 
