@@ -185,9 +185,8 @@ get_parents <- function(file) {
 ########################################################################
 
 
-
 # This function was tailored to fit SP (though it also works well for BA)
-get_parents_sp <- function(file){
+get_parents_sp <- function(file) {
   
   txt <- readLines(file)
   
@@ -207,7 +206,7 @@ get_parents_sp <- function(file){
     result <- tibble(mae = str_trim(mae), pai = str_trim(pai), town = str_match(file, "txt/(.*?)/")[2], candidate = gsub(".*./.*/([0-9]{1,})/.*", replacement = "\\1", x = file))
   }
   
-  if(sum(grepl("[Ff][il]lia[çcg][ãa]o", txt)) > 0){
+  if(sum(grepl("[Ff][il]lia[çcg][ãa]o", txt)) > 0) {
     mae <- gsub(".*- (.*)$", txt[grep("Filiação", txt)], replacement = "\\1")[1]
     pai <- gsub(".*- (.*)$", txt[grep("Filiação", txt) + 1], replacement = "\\1")[1]
     result <- tibble(mae = str_trim(mae), pai = str_trim(pai), town = str_match(file, "txt/(.*?)/")[2], candidate = gsub(".*./.*/([0-9]{1,})/.*", replacement = "\\1", x = file))
@@ -237,54 +236,7 @@ get_parents_sp <- function(file){
 # Test
 # get_parents_sp(all_files_sp[2110])
 
-# get_parents_ba <- function(file){
-  
-  txt <- readLines(file)
-  
-  if(sum(grepl("[Nn]ome [Mm][ãa]e", txt)) > 0 & sum(grepl("[Nn]ome [Pp]ai", txt)) > 0) {
-    mae <- gsub(".*:(.*)$", txt[grep("[Nn]ome [Mm][ãa]e", txt)], replacement = "\\1")[1]
-    pai <- gsub(".*[Nn]ome [Pp]ai(.*)$", txt[grep("[Nn]ome [Pp]ai", txt)], replacement = "\\1")[1]
-    result <- tibble(mae = str_trim(mae), pai = str_trim(pai), town = str_match(file, "txt/(.*?)/")[2], candidate = gsub(".*./.*/([0-9]{1,})/.*", replacement = "\\1", x = file))
-  }
-  
-  if(sum(grepl("[Ff][il]lia[çcg][ãa]o", txt)) > 0){
-    
-    mae <- txt[grep("[Ff][il]lia[çcg][ãa]o", txt)]
-    pai <- txt[grep("[Ff][il]lia[çcg][ãa]o", txt)]
-    
-    mae <- gsub(".*- (.*)$", txt[grep("Filiação", txt)], replacement = "\\1")[1]
-    pai <- gsub(".*- (.*)$", txt[grep("Filiação", txt) + 1], replacement = "\\1")[1]
-    result <- tibble(mae = mae, pai = pai, town = str_match(file, "txt/(.*?)/")[2], candidate = gsub(".*./.*/([0-9]{1,})/.*", replacement = "\\1", x = file))
-  }
-  
-  if(sum(grepl("Nome d[ao] M[ãa]e", txt)) > 0 & sum(grepl("Nome d[ao] Pai", txt)) > 0) {
-    mae <- gsub("Nome d[ao] M[ãa]e (.*)$", txt[grep("Nome d[ao] M[ãa]e", txt)], replacement = "\\1")[1]
-    pai <- gsub("Nome d[ao] Pai (.*)$", txt[grep("Nome d[ao] Pai", txt)], replacement = "\\1")[1]
-    result <- tibble(mae = str_trim(mae), pai = str_trim(pai), town = str_match(file, "txt/(.*?)/")[2], candidate = gsub(".*./.*/([0-9]{1,})/.*", replacement = "\\1", x = file))
-  }
-  
-  if(sum(grepl("MÃE", txt)) > 0 & sum(grepl("PAI", txt)) == 0){
-    mae <- gsub(".*:(.*)$", txt[grep("MÃE", txt)], replacement = "\\1")[1]
-    pai <- NA
-    result <- tibble(mae = str_trim(mae), pai = str_trim(pai), town = str_match(file, "txt/(.*?)/")[2], candidate = gsub(".*./.*/([0-9]{1,})/.*", replacement = "\\1", x = file))
-  }
-  
-  if(sum(grepl("[Ff]ilh[oa] [Dd][aoe]", txt)) > 0) {
-    mae <- gsub("[Ff]ilh[oa] [Dd][aoe] (.*)$", txt[grep("[Ff]ilh[oa] [Dd][aoe]", txt)], replacement = "\\1")[1]
-    pai <- gsub("[Ff]ilh[oa] [Dd][aoe] (.*)$", txt[grep("[Ff]ilh[oa] [Dd][aoe]", txt)], replacement = "\\1")[1]
-    result <- tibble(mae = str_trim(mae), pai = str_trim(pai), town = str_match(file, "txt/(.*?)/")[2], candidate = gsub(".*./.*/([0-9]{1,})/.*", replacement = "\\1", x = file))
-  }
-  
-  # if no parents' names available, return NAs for both.
-  if( !exists("result") ){
-    mae <- NA
-    pai <- NA
-    result <- tibble(mae = str_trim(mae), pai = str_trim(pai), town = NA, candidate = NA)
-  }
-  
-  unique(clean_function(result))
-  # print(file)
-}
+
 
 
 ########################################################################
@@ -294,6 +246,7 @@ get_parents_sp <- function(file){
 ########################################################################
 
 
+# This is saving every single TXT
 all_files_all_states <- list.files(recursive = T, full.name = T)
 
 ## This is runpaining our function on A LOT of files, so will take some time.
@@ -408,8 +361,8 @@ for ( i in 0:length(town_code_mg) ){
 
 # Running get_parents() on every file available from mg
 all_mg_parents <- unique(
-  future_map_dfr(paste0("/media/spinner/br_cand_docs/2020/txt/", all_files_mg), get_parents_sp)
-)
+                    future_map_dfr(paste0("/media/spinner/br_cand_docs/2020/txt/", all_files_mg), get_parents_sp)
+                    )
 
 head(all_mg_parents)
 
