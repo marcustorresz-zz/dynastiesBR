@@ -4,13 +4,14 @@
 
 
 if (!require("pacman")) install.packages("pacman")
-pacman::p_load(tidyverse, httr, lubridate, hrbrthemes, janitor, future, future.apply,
-               quanteda, readtext, pdftools, stringr, RCurl, readxl, tm, stringi)
+pacman::p_load(tidyverse, httr, lubridate, hrbrthemes, janitor, future, future.apply, fs,
+               furrr, quanteda, readtext, pdftools, stringr, RCurl, readxl, tm, stringi)
 
 
 ########################################################################
 ########################### Setting up Dir. ############################
 ########################################################################
+
 
 setwd("/media/spinner/br_cand_docs/2020/txt")
 
@@ -24,69 +25,80 @@ town_codes <- read.csv("https://raw.githubusercontent.com/marcustorresz/dynastie
 ######################## Finding State Codes ###########################
 ########################################################################
 
+
 # This is useful for declaring the state-specific files
 
-# RO
-town_code_ro <- sort(town_codes$codigo_tse[town_codes$uf == "RO"])
-town_code_ro <- str_pad(town_code_ro, 5, pad = "0")
-
-# BA
-town_code_ba <- sort(town_codes$codigo_tse[town_codes$uf == "BA"])
-
-# SP
-town_code_sp <- sort(town_codes$codigo_tse[town_codes$uf == "SP"])
-
-# MG
-town_code_mg <- sort(town_codes$codigo_tse[town_codes$uf == "MG"])
-
-
-########################################################################
-########## Loading Sample Files from RO WITH Parent Names ##############
-########################################################################
-
-
-files <- c("00019/220000671881/15_1600384860519.txt",
-           "00035/220001081445/14_1601043802048.txt",
-           "00051/220000869882/14_1600718143702.txt",
-           "00078/220001190805/14_1600972302714.txt",
-           "00116/220000773053/13_1600741818781.txt",
-           "00159/220000667626/14_1599730865618.txt",
-           "00175/220001200095/pje-3b852f93-Certidão criminal da Justiça Estadual de 1º grau.txt",
-           "00191/220001056527/13_1600907660839.txt",
-           "00310/220001055240/14_1600997520913.txt",
-           "00337/220000745320/14_1600518366743.txt",
-           "00396/220000744299/14_1600708444384.txt",
-           "00035/220001081445/14_1601043802048.txt",
-           "00078/220001189299/15_1600548483174.txt",
-           "00159/220001130772/pje-730d8d60-Certidão criminal da Justiça Estadual de 2º grau.txt",
-           "00396/220001063464/pje-a3ad8580-Certidão criminal da Justiça Estadual de 1º grau.txt",
-           "00396/220001064639/12_1600992577678.txt",
-           "00434/220000636214/12_1599774979710.txt",
-           "00558/220000835374/15_1600814707856.txt",
-           "00574/220001213571/13_1601072113729.txt",
-           "00582/220000724827/13_1600518520633.txt",
-           "00582/220000917846/14_1600903668041.txt",
-           "00612/220000653996/11_1600304138632.txt",
-           "00612/220001108541/14_1601052681655.txt",
-           "00647/220000890308/pje-1abd71eb-Certidão criminal da Justiça Estadual de 2º grau.txt",
-           # "00655/220000663093/pje-1e931a45-Certidão criminal da Justiça Estadual de 2º grau.txt",
-           "00655/220000737426/14_1600454763067.txt",
-           "00663/220000650622/15_1600045951965.txt",
-           "00663/220000867126/14_1600783056905.txt",
-           "00663/220000936288/14_1600474999644.txt",
-           "00701/220000726899/13_1600565673794.txt",
-           "00701/220001063746/11_1600977761886.txt",
-           "00736/220000986873/14_1600646327789.txt",
-           "00809/220000639408/14_1599609318908.txt"
-)
-
+{
+  # RO
+  town_code_ro <- sort(town_codes$codigo_tse[town_codes$uf == "RO"])
+  town_code_ro <- str_pad(town_code_ro, 5, pad = "0")
+  # BA
+  town_code_ba <- sort(town_codes$codigo_tse[town_codes$uf == "BA"])
+  # SP
+  town_code_sp <- sort(town_codes$codigo_tse[town_codes$uf == "SP"])
+  # MG
+  town_code_mg <- sort(town_codes$codigo_tse[town_codes$uf == "MG"])
+  # RS
+  town_code_rs <- sort(town_codes$codigo_tse[town_codes$uf == "RS"])
+  # PA
+  town_code_pa <- sort(town_codes$codigo_tse[town_codes$uf == "PA"])
+  town_code_pa <- str_pad(town_code_pa, 5, pad = "0")
+  # SC
+  town_code_sc <- sort(town_codes$codigo_tse[town_codes$uf == "SC"])
+  # PR
+  town_code_pr <- sort(town_codes$codigo_tse[town_codes$uf == "PR"])
+  # GO
+  town_code_go <- sort(town_codes$codigo_tse[town_codes$uf == "GO"])
+  # PI
+  town_code_pi <- sort(town_codes$codigo_tse[town_codes$uf == "PI"])
+  # RJ
+  town_code_rj <- sort(town_codes$codigo_tse[town_codes$uf == "RJ"])
+  # ES
+  town_code_es <- sort(town_codes$codigo_tse[town_codes$uf == "ES"])
+  # PE
+  town_code_pe <- sort(town_codes$codigo_tse[town_codes$uf == "PE"])
+  # CE
+  town_code_ce <- sort(town_codes$codigo_tse[town_codes$uf == "CE"])
+  # RN
+  town_code_rn <- sort(town_codes$codigo_tse[town_codes$uf == "RN"])
+  # AL
+  town_code_al <- sort(town_codes$codigo_tse[town_codes$uf == "AL"])
+  # SE
+  town_code_se <- sort(town_codes$codigo_tse[town_codes$uf == "SE"])
+  # MA
+  town_code_ma <- sort(town_codes$codigo_tse[town_codes$uf == "MA"])
+  town_code_ma <- str_pad(town_code_ma, 5, pad = "0")
+  # PB
+  town_code_pb <- sort(town_codes$codigo_tse[town_codes$uf == "PB"])
+  # AM
+  town_code_am <- sort(town_codes$codigo_tse[town_codes$uf == "AM"])
+  town_code_am <- str_pad(town_code_am, 5, pad = "0")
+  # RR
+  town_code_rr <- sort(town_codes$codigo_tse[town_codes$uf == "RR"])
+  town_code_rr <- str_pad(town_code_rr, 5, pad = "0")
+  # TO
+  town_code_to <- sort(town_codes$codigo_tse[town_codes$uf == "TO"])
+  # AC
+  town_code_ac <- sort(town_codes$codigo_tse[town_codes$uf == "AC"])
+  town_code_ac <- str_pad(town_code_ac, 5, pad = "0")
+  # MT
+  town_code_mt <- sort(town_codes$codigo_tse[town_codes$uf == "MT"])
+  # MS
+  town_code_ms <- sort(town_codes$codigo_tse[town_codes$uf == "MS"])
+  # DF
+  town_code_df <- sort(town_codes$codigo_tse[town_codes$uf == "DF"])
+  # AP
+  town_code_ap <- sort(town_codes$codigo_tse[town_codes$uf == "AP"])
+}
 
 ########################################################################
 ###################### Declaring Main Functions ########################
 ########################################################################
 
 
+# This function cleans the DFs; removes special characters, numbers, etc.
 clean_function <- function(x) {
+  
   x$pai = sub("[:,]", "", x$pai)
   x$pai = sub("[.,]", "", x$pai)
   x$pai = sub("Filiação[ 2]", "", x$pai)
@@ -97,7 +109,14 @@ clean_function <- function(x) {
   x$pai = sub("[\\]", "", x$pai)
   x$pai = sub("[Mm][ã]e ", "", x$pai)
   x$pai = sub("[Pp]ai ", "", x$pai)
+  x$pai = sub("portador(.*)", "", x$pai)
+  x$pai = sub("feito criminal em nome de(.*)", "", x$pai)
+  x$pai = sub("[Cc][Pp][Ff]", "", x$pai)
+  x$pai = sub(" nascid[oa](.*)", "", x$pai)
+  x$pai = sub(" [Bb]rasileir[oa](.*)", "", x$pai)
+  x$pai <- stri_trans_general(str_squish(tolower(x$pai)), "latin-ascii")
   
+  x$mae = sub("[Nn]ome [Dd][aeo] ", "", x$mae)
   x$mae = sub("[:,]", "", x$mae)
   x$mae = sub("[.,]", "", x$mae)
   x$mae = sub("Filiação[ 1]", "", x$mae)
@@ -116,14 +135,20 @@ clean_function <- function(x) {
   x$mae = sub(" nascid[oa](.*)", "", x$mae)
   x$mae = sub("[Mm][ã]e ", "", x$mae)
   x$mae = sub("[Pp]ai ", "", x$mae)
-
-  x$mae = str_trim(x$mae)
-  x$pai = str_trim(x$pai)
+  x$mae = sub("feito criminal em nome de(.*)", "", x$mae)
+  x$mae = sub("[Cc][Pp][Ff]", "", x$mae)
+  x$mae <- stri_trans_general(str_squish(tolower(x$mae)), "latin-ascii")
   
+  x$mae = str_trim(x$mae)
+  x$mae = str_squish(x$mae)
+  x$pai = str_trim(x$pai)
+  x$pai = str_squish(x$pai)
+  
+  # x <- drop_na(unique(x))
   x = x
 }
 
-## This function extracts parents from candidate TXTs (GENERAL)
+# This function extracts parents from candidate TXTs (GENERAL)
 get_parents <- function(file) {
   
   txt <- readLines(file)
@@ -140,13 +165,13 @@ get_parents <- function(file) {
     result <- tibble(mae = str_trim(mae), pai = str_trim(pai), town = str_match(file, "txt/(.*?)/")[2], candidate = gsub(".*./.*/([0-9]{1,})/.*", replacement = "\\1", x = file))
   }
   
-  if(sum(grepl("Nome d[ao] M[ãa]e", txt)) > 0 & sum(grepl("Nome d[ao] Pai", txt)) > 0) {
+  if(sum(grepl("Nome d[ao] [Mm][ãa]e", txt)) > 0 & sum(grepl("Nome d[ao] [Pp]ai", txt)) > 0) {
     mae <- gsub("Nome d[ao] M[ãa]e (.*)$", txt[grep("Nome d[ao] M[ãa]e", txt)], replacement = "\\1")[1]
     pai <- gsub("Nome d[ao] Pai (.*)$", txt[grep("Nome d[ao] Pai", txt)], replacement = "\\1")[1]
     result <- tibble(mae = str_trim(mae), pai = str_trim(pai), town = str_match(file, "txt/(.*?)/")[2], candidate = gsub(".*./.*/([0-9]{1,})/.*", replacement = "\\1", x = file))
   }
   
-  if(sum(grepl("MÃE", txt)) > 0 & sum(grepl("PAI", txt)) == 0){
+  if(sum(grepl("M[AÃ]E", txt)) > 0 & sum(grepl("PAI", txt)) == 0){
     mae <- gsub(".*:(.*)$", txt[grep("MÃE", txt)], replacement = "\\1")[1]
     pai <- NA
     result <- tibble(mae = str_trim(mae), pai = str_trim(pai), town = str_match(file, "txt/(.*?)/")[2], candidate = gsub(".*./.*/([0-9]{1,})/.*", replacement = "\\1", x = file))
@@ -170,14 +195,6 @@ get_parents <- function(file) {
 }
 
 
-## Run it one file
-# get_parents(paste0("/media/spinner/br_cand_docs/2020/txt/", files[2]))
-
-## Run it on all files
-# RO_00019_parents <- future_map_dfr(paste0("/media/spinner/br_cand_docs/2020/txt/", files), get_parents)
-
-
-
 ########################################################################
 ########################################################################
 ############## DECLARING STATE-SPECIFIC FUNCTIONS ######################
@@ -185,7 +202,7 @@ get_parents <- function(file) {
 ########################################################################
 
 
-# This function was tailored to fit SP (though it also works well for BA)
+# This function was tailored to fit SP 
 get_parents_sp <- function(file) {
   
   txt <- readLines(file)
@@ -196,7 +213,7 @@ get_parents_sp <- function(file) {
     
     mae <- str_match(mae, " e (.*),")[2]
     pai <- str_match(pai, "[Ff]ilh[oa] [Dd][aoe] (.*?) e ")[2]
-      
+    
     result <- tibble(mae = str_trim(mae), pai = str_trim(pai), town = str_match(file, "txt/(.*?)/")[2], candidate = gsub(".*./.*/([0-9]{1,})/.*", replacement = "\\1", x = file))
   }
   
@@ -233,154 +250,817 @@ get_parents_sp <- function(file) {
   unique(clean_function(result))
 }
 
-# Test
-# get_parents_sp(all_files_sp[2110])
+# This function was tailored to fit PA 
+get_parents_pa <- function(file) {
+  
+  txt <- readLines(file)
+  
+  if(sum(grepl("[Nn]ome [Mm][ãa]e", txt)) > 0 & sum(grepl("[Nn]ome [Pp]ai", txt)) > 0) {
+    mae <- gsub(".*:(.*)$", txt[grep("[Nn]ome [Mm][ãa]e", txt)], replacement = "\\1")[1]
+    pai <- gsub(".*[Nn]ome [Pp]ai(.*)$", txt[grep("[Nn]ome [Pp]ai", txt)], replacement = "\\1")[1]
+    result <- tibble(mae = str_trim(mae), pai = str_trim(pai), town = str_match(file, "txt/(.*?)/")[2], candidate = gsub(".*./.*/([0-9]{1,})/.*", replacement = "\\1", x = file))
+  }
+  
+  if(sum(grepl("[Ff][il]lia[çcg][ãa]o", txt)) > 0){
+    mae <- gsub(".*- (.*)$", txt[grep("Filiação", txt)], replacement = "\\1")[1]
+    pai <- gsub(".*- (.*)$", txt[grep("Filiação", txt) + 1], replacement = "\\1")[1]
+    result <- tibble(mae = str_trim(mae), pai = str_trim(pai), town = str_match(file, "txt/(.*?)/")[2], candidate = gsub(".*./.*/([0-9]{1,})/.*", replacement = "\\1", x = file))
+  }
+  
+  if(sum(grepl("Nome d[ao] M[ãa]e", txt)) > 0 & sum(grepl("Nome d[ao] Pai", txt)) > 0) {
+    mae <- gsub("Nome d[ao] M[ãa]e (.*)$", txt[grep("Nome d[ao] M[ãa]e", txt)], replacement = "\\1")[1]
+    pai <- gsub("Nome d[ao] Pai (.*)$", txt[grep("Nome d[ao] Pai", txt)], replacement = "\\1")[1]
+    result <- tibble(mae = str_trim(mae), pai = str_trim(pai), town = str_match(file, "txt/(.*?)/")[2], candidate = gsub(".*./.*/([0-9]{1,})/.*", replacement = "\\1", x = file))
+  }
+  
+  if(sum(grepl("MÃE", txt)) > 0 & sum(grepl("PAI", txt)) == 0){
+    mae <- gsub(".*:(.*)$", txt[grep("MÃE", txt)], replacement = "\\1")[1]
+    pai <- NA
+    result <- tibble(mae = str_trim(mae), pai = str_trim(pai), town = str_match(file, "txt/(.*?)/")[2], candidate = gsub(".*./.*/([0-9]{1,})/.*", replacement = "\\1", x = file))
+  }
+  
+  if(sum(grepl("[Ff]ilh[oa] [Dd][aoe]", txt)) > 0) {
+    
+    txt <- c(txt[grep("[Ff]ilh[oa] [Dd][aoe]", txt)], txt[grep("[Ff]ilh[oa] [Dd][aoe]", txt) + 1])
+    txt <- paste(txt, collapse = " ")
+    
+    mae <- gsub(".* [Ff]ilh[oa] [Dd][aoe] (.*), CPF.*", "\\1", txt)
+    pai <- gsub(".* [Ff]ilh[oa] [Dd][aoe] (.*), CPF.*", "\\1", txt)
+    result <- tibble(mae = str_trim(mae), pai = str_trim(pai), town = str_match(file, "txt/(.*?)/")[2], candidate = gsub(".*./.*/([0-9]{1,})/.*", replacement = "\\1", x = file))
+  }
+  
+  # if no parents' names available, return NAs for both.
+  if( !exists("result") ){
+    mae <- NA
+    pai <- NA
+    result <- tibble(mae = str_trim(mae), pai = str_trim(pai), town = NA, candidate = NA)
+  }
+  
+  unique(clean_function(result))
+  # print(file)
+}
 
+# This function was tailored to fit RS
+get_parents_rs <- function(file) {
+  
+  txt <- readLines(file)
+  
+  if(sum(grepl("[Nn]ome [Mm][ãa]e", txt)) > 0 & sum(grepl("[Nn]ome [Pp]ai", txt)) > 0) {
+    mae <- gsub(".*:(.*)$", txt[grep("[Nn]ome [Mm][ãa]e", txt)], replacement = "\\1")[1]
+    pai <- gsub(".*[Nn]ome [Pp]ai(.*)$", txt[grep("[Nn]ome [Pp]ai", txt)], replacement = "\\1")[1]
+    result <- tibble(mae = str_trim(mae), pai = str_trim(pai), town = str_match(file, "txt/(.*?)/")[2], candidate = gsub(".*./.*/([0-9]{1,})/.*", replacement = "\\1", x = file))
+  }
+  
+  if(sum(grepl("[Ff][il]lia[çcg][ãa]o", txt)) > 0){
+    mae <- gsub(".*- (.*)$", txt[grep("Filiação", txt)], replacement = "\\1")[1]
+    pai <- gsub(".*- (.*)$", txt[grep("Filiação", txt) + 1], replacement = "\\1")[1]
+    result <- tibble(mae = str_trim(mae), pai = str_trim(pai), town = str_match(file, "txt/(.*?)/")[2], candidate = gsub(".*./.*/([0-9]{1,})/.*", replacement = "\\1", x = file))
+  }
+  
+  if(sum(grepl("Nome d[ao] M[ãa]e", txt)) > 0 & sum(grepl("Nome d[ao] Pai", txt)) > 0) {
+    mae <- gsub("Nome d[ao] M[ãa]e (.*)$", txt[grep("Nome d[ao] M[ãa]e", txt)], replacement = "\\1")[1]
+    pai <- gsub("Nome d[ao] Pai (.*)$", txt[grep("Nome d[ao] Pai", txt)], replacement = "\\1")[1]
+    result <- tibble(mae = str_trim(mae), pai = str_trim(pai), town = str_match(file, "txt/(.*?)/")[2], candidate = gsub(".*./.*/([0-9]{1,})/.*", replacement = "\\1", x = file))
+  }
+  
+  if(sum(grepl("MÃE", txt)) > 0 & sum(grepl("PAI", txt)) == 0){
+    mae <- gsub(".*:(.*)$", txt[grep("MÃE", txt)], replacement = "\\1")[1]
+    pai <- NA
+    result <- tibble(mae = str_trim(mae), pai = str_trim(pai), town = str_match(file, "txt/(.*?)/")[2], candidate = gsub(".*./.*/([0-9]{1,})/.*", replacement = "\\1", x = file))
+  }
+  
+  if(sum(grepl("[Ff]ilh[oa] [Dd][aoe]", txt)) > 0) {
+    
+    txt <- txt[grep("[Ff]ilh[oa] [Dd][aoe]", txt)]
+    # txt <- paste(txt, collapse = " ")
+    
+    mae <- gsub(".* e (.*),.*", "\\1", txt)
+    pai <- gsub(".* [Ff]ilh[oa] [Dd][aoe](.*)e .*", "\\1", txt)
+    result <- tibble(mae = str_trim(mae), pai = str_trim(pai), town = str_match(file, "txt/(.*?)/")[2], candidate = gsub(".*./.*/([0-9]{1,})/.*", replacement = "\\1", x = file))
+  }
+  
+  # if no parents' names available, return NAs for both.
+  if( !exists("result") ){
+    mae <- NA
+    pai <- NA
+    result <- tibble(mae = str_trim(mae), pai = str_trim(pai), town = NA, candidate = NA)
+  }
+  
+  unique(clean_function(result))
+  # print(file)
+}
 
+# This function was tailored to fit PB
+get_parents_pb <- function(file) {
+  
+  txt <- readLines(file)
+  
+  if(sum(grepl("[Nn]ome [Mm][ãa]e", txt)) > 0 & sum(grepl("[Nn]ome [Pp]ai", txt)) > 0) {
+    mae <- gsub(".*:(.*)$", txt[grep("[Nn]ome [Mm][ãa]e", txt)], replacement = "\\1")[1]
+    pai <- gsub(".*[Nn]ome [Pp]ai(.*)$", txt[grep("[Nn]ome [Pp]ai", txt)], replacement = "\\1")[1]
+    result <- tibble(mae = str_trim(mae), pai = str_trim(pai), town = str_match(file, "txt/(.*?)/")[2], candidate = gsub(".*./.*/([0-9]{1,})/.*", replacement = "\\1", x = file))
+  }
+  
+  if(sum(grepl("[Ff][il]lia[çcg][ãa]o", txt)) > 0){
+    mae <- gsub(".*- (.*)$", txt[grep("Filiação", txt)], replacement = "\\1")[1]
+    pai <- gsub(".*- (.*)$", txt[grep("Filiação", txt) + 1], replacement = "\\1")[1]
+    result <- tibble(mae = str_trim(mae), pai = str_trim(pai), town = str_match(file, "txt/(.*?)/")[2], candidate = gsub(".*./.*/([0-9]{1,})/.*", replacement = "\\1", x = file))
+  }
+  
+  if(sum(grepl("Nome d[ao] [Mm][ãa]e", txt)) > 0 & sum(grepl("Nome d[ao] [Pp]ai", txt)) > 0) {
+    mae <- gsub("Nome d[ao] [Mm][ãa]e (.*)$", txt[grep("Nome d[ao] [Mm][ãa]e", txt)], replacement = "\\1")[1]
+    pai <- gsub("Nome d[ao] [Pp]ai (.*)$", txt[grep("Nome d[ao] [Pp]ai", txt)], replacement = "\\1")[1]
+    result <- tibble(mae = str_trim(mae), pai = str_trim(pai), town = str_match(file, "txt/(.*?)/")[2], candidate = gsub(".*./.*/([0-9]{1,})/.*", replacement = "\\1", x = file))
+  }
+  
+  if(sum(grepl("MÃE", txt)) > 0 & sum(grepl("PAI", txt)) == 0){
+    mae <- gsub(".*:(.*)$", txt[grep("MÃE", txt)], replacement = "\\1")[1]
+    pai <- NA
+    result <- tibble(mae = str_trim(mae), pai = str_trim(pai), town = str_match(file, "txt/(.*?)/")[2], candidate = gsub(".*./.*/([0-9]{1,})/.*", replacement = "\\1", x = file))
+  }
+  
+  if(sum(grepl("[Ff]ilh[oa] [Dd][aoe]", txt)) > 0) {
+    mae <- gsub("[Ff]ilh[oa] [Dd][aoe] (.*)$", txt[grep("[Ff]ilh[oa] [Dd][aoe]", txt)], replacement = "\\1")[1]
+    pai <- gsub("[Ff]ilh[oa] [Dd][aoe] (.*)$", txt[grep("[Ff]ilh[oa] [Dd][aoe]", txt)], replacement = "\\1")[1]
+    result <- tibble(mae = str_trim(mae), pai = str_trim(pai), town = str_match(file, "txt/(.*?)/")[2], candidate = gsub(".*./.*/([0-9]{1,})/.*", replacement = "\\1", x = file))
+  }
+  
+  # if no parents' names available, return NAs for both.
+  if( !exists("result") ){
+    mae <- NA
+    pai <- NA
+    result <- tibble(mae = str_trim(mae), pai = str_trim(pai), town = NA, candidate = NA)
+  }
+  
+  unique(clean_function(result))
+  # print(file)
+}
 
+# This function was tailored to fit PI
+get_parents_pi <- function(file) {
+  
+  txt <- readLines(file)
+  
+  if(sum(grepl("[Nn]ome [Mm][ãa]e", txt)) > 0 & sum(grepl("[Nn]ome [Pp]ai", txt)) > 0) {
+    mae <- gsub(".*:(.*)$", txt[grep("[Nn]ome [Mm][ãa]e", txt)], replacement = "\\1")[1]
+    pai <- gsub(".*[Nn]ome [Pp]ai(.*)$", txt[grep("[Nn]ome [Pp]ai", txt)], replacement = "\\1")[1]
+    result <- tibble(mae = str_trim(mae), pai = str_trim(pai), town = str_match(file, "txt/(.*?)/")[2], candidate = gsub(".*./.*/([0-9]{1,})/.*", replacement = "\\1", x = file))
+  }
+  
+  if(sum(grepl("[Ff][il]lia[çcg][ãa]o", txt)) > 0){
+    mae <- gsub(".*- (.*)$", txt[grep("Filiação", txt)], replacement = "\\1")[1]
+    pai <- gsub(".*- (.*)$", txt[grep("Filiação", txt) + 1], replacement = "\\1")[1]
+    result <- tibble(mae = str_trim(mae), pai = str_trim(pai), town = str_match(file, "txt/(.*?)/")[2], candidate = gsub(".*./.*/([0-9]{1,})/.*", replacement = "\\1", x = file))
+  }
+  
+  if(sum(grepl("Nome d[ao] [Mm][ãa]e", txt)) > 0 & sum(grepl("Nome d[ao] [Pp]ai", txt)) > 0) {
+    mae <- gsub("Nome d[ao] M[ãa]e (.*)$", txt[grep("Nome d[ao] M[ãa]e", txt)], replacement = "\\1")[1]
+    pai <- gsub("Nome d[ao] Pai (.*)$", txt[grep("Nome d[ao] Pai", txt)], replacement = "\\1")[1]
+    result <- tibble(mae = str_trim(mae), pai = str_trim(pai), town = str_match(file, "txt/(.*?)/")[2], candidate = gsub(".*./.*/([0-9]{1,})/.*", replacement = "\\1", x = file))
+  }
+  
+  if(sum(grepl("M[AÃ]E", txt)) > 0 & sum(grepl("PAI", txt)) > 0){
+    
+    x = txt[grep("[PM][AÃ][EI]", txt)]
+    x = paste0(txt[grep("[PM][AÃ][EI]", txt) - 1], txt[grep("[PM][AÃ][EI]", txt)], txt[grep("[PM][AÃ][EI]", txt) + 1], collapse = " ")
+    
+    mae <- str_match(x, "M[AÃ]E: (.*?) [PM][AÃ][EI]")[2]
+    pai <- str_match(x, "PAI: (.*?)[PM][AÃ][EI]")[2]
+    result <- tibble(mae = str_trim(mae), pai = str_trim(pai), town = str_match(file, "txt/(.*?)/")[2], candidate = gsub(".*./.*/([0-9]{1,})/.*", replacement = "\\1", x = file))
+  }
+  
+  if(sum(grepl("[Ff]ilh[oa] [Dd][aoe]", txt)) > 0) {
+    mae <- gsub("[Ff]ilh[oa] [Dd][aoe] (.*)$", txt[grep("[Ff]ilh[oa] [Dd][aoe]", txt)], replacement = "\\1")[1]
+    pai <- gsub("[Ff]ilh[oa] [Dd][aoe] (.*)$", txt[grep("[Ff]ilh[oa] [Dd][aoe]", txt)], replacement = "\\1")[1]
+    result <- tibble(mae = str_trim(mae), pai = str_trim(pai), town = str_match(file, "txt/(.*?)/")[2], candidate = gsub(".*./.*/([0-9]{1,})/.*", replacement = "\\1", x = file))
+  }
+  
+  # if no parents' names available, return NAs for both.
+  if( !exists("result") ){
+    mae <- NA
+    pai <- NA
+    result <- tibble(mae = str_trim(mae), pai = str_trim(pai), town = NA, candidate = NA)
+  }
+  
+  unique(clean_function(result))
+  # print(file)
+}
 
-########################################################################
-########################################################################
-################ RUNNING FUNCTION ON ALL STATES ########################
-########################################################################
-########################################################################
-
-
-# This is saving every single TXT
-all_files_all_states <- list.files(recursive = T, full.name = T)
-
-## This is runpaining our function on A LOT of files, so will take some time.
-all_parents <- unique(
-                  future_map_dfr(paste0("/media/spinner/br_cand_docs/2020/txt/", all_files_all_states), get_parents)
-                )
-
-
-# head(all_parents)
-
-# tail(all_parents)
-
-
-########################################################################
-########################################################################
-################# RUNNING FUNCTION ON RONDONIA #########################
-########################################################################
-########################################################################
-
-
-# Saving all files from all 52 folders within Rondonia
-all_files_rondonia = c()
-
-for (i in 0:length(town_code_ro)){
-  town_code_ro[i] = toString(town_code_ro[i])
-  all_files_rondonia = c(all_files_rondonia, c(list.files(town_code_ro[i], recursive = T, full.name = T)))
+# This function was tailored to fit GO
+get_parents_go <- function(file) {
+  
+  txt <- readLines(file)
+  
+  if(sum(grepl("[Nn]ome [Mm][ãa]e", txt)) > 0 & sum(grepl("[Nn]ome [Pp]ai", txt)) > 0) {
+    mae <- gsub(".*:(.*)$", txt[grep("[Nn]ome [Mm][ãa]e", txt)], replacement = "\\1")[1]
+    pai <- gsub(".*[Nn]ome [Pp]ai(.*)$", txt[grep("[Nn]ome [Pp]ai", txt)], replacement = "\\1")[1]
+    result <- tibble(mae = str_trim(mae), pai = str_trim(pai), town = str_match(file, "txt/(.*?)/")[2], candidate = gsub(".*./.*/([0-9]{1,})/.*", replacement = "\\1", x = file))
+  }
+  
+  if(sum(grepl("[Ff][il]lia[çcg][ãa]o", txt)) > 0){
+    mae <- gsub(".*- (.*)$", txt[grep("Filiação", txt)], replacement = "\\1")[1]
+    pai <- gsub(".*- (.*)$", txt[grep("Filiação", txt) + 1], replacement = "\\1")[1]
+    result <- tibble(mae = str_trim(mae), pai = str_trim(pai), town = str_match(file, "txt/(.*?)/")[2], candidate = gsub(".*./.*/([0-9]{1,})/.*", replacement = "\\1", x = file))
+  }
+  
+  if(sum(grepl("Nome d[ao] [Mm][ãa]e", txt)) > 0 | sum(grepl("Nome d[ao] [Pp]ai", txt)) > 0) {
+    mae <- gsub("Nome d[ao] M[ãa]e (.*)$", txt[grep("Nome d[ao] M[ãa]e", txt)], replacement = "\\1")[1]
+    pai <- gsub("Nome d[ao] Pai (.*)$", txt[grep("Nome d[ao] Pai", txt)], replacement = "\\1")[1]
+    result <- tibble(mae = str_trim(mae), pai = str_trim(pai), town = str_match(file, "txt/(.*?)/")[2], candidate = gsub(".*./.*/([0-9]{1,})/.*", replacement = "\\1", x = file))
+  }
+  
+  if(sum(grepl("M[AÃ]E", txt)) > 0 & sum(grepl("PAI", txt)) == 0){
+    mae <- gsub(".*:(.*)$", txt[grep("MÃE", txt)], replacement = "\\1")[1]
+    pai <- NA
+    result <- tibble(mae = str_trim(mae), pai = str_trim(pai), town = str_match(file, "txt/(.*?)/")[2], candidate = gsub(".*./.*/([0-9]{1,})/.*", replacement = "\\1", x = file))
+  }
+  
+  if(sum(grepl("[Ff]ilh[oa] [Dd][aoe]", txt)) > 0) {
+    mae <- gsub("[Ff]ilh[oa] [Dd][aoe] (.*)$", txt[grep("[Ff]ilh[oa] [Dd][aoe]", txt)], replacement = "\\1")[1]
+    pai <- gsub("[Ff]ilh[oa] [Dd][aoe] (.*)$", txt[grep("[Ff]ilh[oa] [Dd][aoe]", txt)], replacement = "\\1")[1]
+    result <- tibble(mae = str_trim(mae), pai = str_trim(pai), town = str_match(file, "txt/(.*?)/")[2], candidate = gsub(".*./.*/([0-9]{1,})/.*", replacement = "\\1", x = file))
+  }
+  
+  # if no parents' names available, return NAs for both.
+  if( !exists("result") ){
+    mae <- NA
+    pai <- NA
+    result <- tibble(mae = str_trim(mae), pai = str_trim(pai), town = NA, candidate = NA)
+  }
+  
+  unique(clean_function(result))
+  # print(file)
 }
 
 
-# Running get_parents() on every file available from Rondonia
-all_rondonia_parents <- unique(
-                          future_map_dfr(paste0("/media/spinner/br_cand_docs/2020/txt/", all_files_rondonia), get_parents)
-                        )
-
-head(all_rondonia_parents)
-
-all_bahia_parents_complete <- drop_na(all_rondonia_parents)
-
-########################################################################
-########################################################################
-################### RUNNING FUNCTION ON BAHIA ##########################
-########################################################################
-########################################################################
-
-
-# Declaring all files from Bahia using a FOR LOOP
-all_files_bahia = c()
-
-for (i in 0:length(town_code_ba)){
-  town_code_ba[i] = toString(town_code_ba[i])
-  all_files_bahia = c(all_files_bahia, c(list.files(town_code_ba[i], recursive = T, full.name = T)))
+# BA      # MOSTLY WORKING; FIX MINOR THINGS
+{
+  ########################################################################
+  ########################################################################
+  ################### RUNNING FUNCTION ON BAHIA ##########################
+  ########################################################################
+  ########################################################################
+  
+  
+  # Declaring all files from ba using a FOR LOOP
+  all_files_ba = c()
+  
+  for (i in 0:length(town_code_ba)){
+    town_code_ba[i] = toString(town_code_ba[i])
+    all_files_ba = c(all_files_ba, c(list.files(town_code_ba[i], recursive = T, full.name = T)))
+  }
+  
+  
+  # Running get_parents() on every file available from ba
+  all_ba_parents <- unique(
+    future_map_dfr(paste0("/media/spinner/br_cand_docs/2020/txt/", all_files_ba), get_parents)
+  )
+  
+  # Removing all NAs
+  all_ba_parents <- drop_na(unique(all_ba_parents))
 }
-
-head(all_files_bahia)
-tail(all_files_bahia)
-
-
-# Running get_parents() on every file available from Bahia
-all_bahia_parents <- unique(
-                        future_map_dfr(paste0("/media/spinner/br_cand_docs/2020/txt/", all_files_bahia), get_parents_sp)
+# PI      # FIXED
+{
+  ########################################################################
+  ########################################################################
+  ###################### RUNNING FUNCTION ON PIAUI #######################
+  ########################################################################
+  ########################################################################
+  
+  
+  # Declaring all files from PR using a FOR LOOP
+  all_files_pi = c()
+  
+  for ( i in 0:length(town_code_pi) ){
+    town_code_pi[i] = toString(town_code_pi[i])
+    all_files_pi = c( all_files_pi, c(list.files(town_code_pi[i], recursive = T, full.name = T) ) )
+  }
+  
+  # Running get_parents() on every file available from rs
+  all_pi_parents <- unique(
+    future_map_dfr(paste0("/media/spinner/br_cand_docs/2020/txt/", all_files_pi), get_parents_pi)
+  )
+  
+  # Removing all NAs
+  all_pi_parents <- drop_na(unique(all_pi_parents))
+}
+# PE      # MOSTLY WORKING; FIX MINOR THINGS
+{
+  ########################################################################
+  ########################################################################
+  ####################### RUNNING FUNCTION ON PE #########################
+  ########################################################################
+  ########################################################################
+  
+  
+  # Declaring all files from PR using a FOR LOOP
+  all_files_pe = c()
+  
+  for ( i in 0:length(town_code_pe) ){
+    town_code_pe[i] = toString(town_code_pe[i])
+    all_files_pe = c( all_files_pe, c(list.files(town_code_pe[i], recursive = T, full.name = T) ) )
+  }
+  
+  # Running get_parents() on every file available from rs
+  all_pe_parents <- unique(
+                      future_map_dfr(paste0("/media/spinner/br_cand_docs/2020/txt/", all_files_pe), get_parents)
                       )
-
-head(all_bahia_parents)
-tail(all_bahia_parents)
-
-all_bahia_parents_complete <- drop_na(all_bahia_parents)
-
-
+  
+  # Removing all NAs
+  all_pe_parents <- drop_na(unique(all_pe_parents))
+}
+# CE      # NEED TO FIX
+{
 ########################################################################
 ########################################################################
-################# RUNNING FUNCTION ON SAO PAULO ########################
+####################### RUNNING FUNCTION ON CE #########################
 ########################################################################
 ########################################################################
 
 
-# Declaring all files from sp using a FOR LOOP
-all_files_sp = c()
+# Declaring all files from PR using a FOR LOOP
+all_files_ce = c()
 
-for ( i in 0:length(town_code_sp) ){
-  town_code_sp[i] = toString(town_code_sp[i])
-  all_files_sp = c( all_files_sp, c(list.files(town_code_sp[i], recursive = T, full.name = T) ) )
+for ( i in 0:length(town_code_ce) ){
+  town_code_ce[i] = toString(town_code_ce[i])
+  all_files_ce = c( all_files_ce, c(list.files(town_code_ce[i], recursive = T, full.name = T) ) )
 }
 
-head(all_files_sp)
-tail(all_files_sp)
+# Running get_parents() on every file available from rs
+all_ce_parents <- unique(
+  future_map_dfr(paste0("/media/spinner/br_cand_docs/2020/txt/", all_files_ce), get_parents)
+)
 
-
-# Running get_parents() on every file available from sp
-all_sp_parents <- unique(
-                    future_map_dfr(paste0("/media/spinner/br_cand_docs/2020/txt/", all_files_sp), get_parents_sp)
-                  )
-
-head(all_sp_parents)
-
-all_sp_parents_complete <- drop_na(all_sp_parents)
-
-
-########################################################################
-########################################################################
-################# RUNNING FUNCTION ON MINAS GERAIS #####################
-########################################################################
-########################################################################
-
-
-# Declaring all files from mg using a FOR LOOP
-all_files_mg = c()
-
-for ( i in 0:length(town_code_mg) ){
-  town_code_mg[i] = toString(town_code_mg[i])
-  all_files_mg = c( all_files_mg, c(list.files(town_code_mg[i], recursive = T, full.name = T) ) )
+# Removing all NAs
+all_ce_parents <- drop_na(unique(all_ce_parents))
+}
+# RN      # NEED TO FIX
+{
+  ########################################################################
+  ########################################################################
+  ####################### RUNNING FUNCTION ON RN #########################
+  ########################################################################
+  ########################################################################
+  
+  
+  # Declaring all files from PR using a FOR LOOP
+  all_files_rn = c()
+  
+  for ( i in 0:length(town_code_rn) ){
+    town_code_rn[i] = toString(town_code_rn[i])
+    all_files_rn = c( all_files_rn, c(list.files(town_code_rn[i], recursive = T, full.name = T) ) )
+  }
+  
+  # Running get_parents() on every file available from rs
+  all_rn_parents <- unique(
+    future_map_dfr(paste0("/media/spinner/br_cand_docs/2020/txt/", all_files_rn), get_parents)
+  )
+  
+  # Removing all NAs
+  all_rn_parents <- drop_na(unique(all_rn_parents))
+}
+# AL      # NEED TO FIX
+{  
+  ########################################################################
+  ########################################################################
+  ####################### RUNNING FUNCTION ON AL #########################
+  ########################################################################
+  ########################################################################
+  
+  
+  # Declaring all files from PR using a FOR LOOP
+  all_files_al = c()
+  
+  for ( i in 0:length(town_code_al) ){
+    town_code_al[i] = toString(town_code_al[i])
+    all_files_al = c( all_files_al, c(list.files(town_code_al[i], recursive = T, full.name = T) ) )
+  }
+  
+  # Running get_parents() on every file available from rs
+  all_al_parents <- unique(
+    future_map_dfr(paste0("/media/spinner/br_cand_docs/2020/txt/", all_files_al), get_parents)
+  )
+  
+  # Removing all NAs
+  all_al_parents <- drop_na(unique(all_al_parents))
+  }
+# SE      # NEED TO FIX
+{
+  ########################################################################
+  ########################################################################
+  ####################### RUNNING FUNCTION ON SE #########################
+  ########################################################################
+  ########################################################################
+  
+  
+  # Declaring all files from PR using a FOR LOOP
+  all_files_se = c()
+  
+  for ( i in 0:length(town_code_se) ){
+    town_code_se[i] = toString(town_code_se[i])
+    all_files_se = c( all_files_se, c(list.files(town_code_se[i], recursive = T, full.name = T) ) )
+  }
+  
+  # Running get_parents() on every file available from rs
+  all_se_parents <- unique(
+    future_map_dfr(paste0("/media/spinner/br_cand_docs/2020/txt/", all_files_se), get_parents)
+  )
+  
+  # Removing all NAs
+  all_se_parents <- drop_na(unique(all_se_parents))
+}
+# MA      # NEED TO FIX
+{  
+  ########################################################################
+  ########################################################################
+  ####################### RUNNING FUNCTION ON MA #########################
+  ########################################################################
+  ########################################################################
+  
+  
+  # Declaring all files from PR using a FOR LOOP
+  all_files_ma = c()
+  
+  for ( i in 0:length(town_code_ma) ){
+    town_code_ma[i] = toString(town_code_ma[i])
+    all_files_ma = c( all_files_ma, c(list.files(town_code_ma[i], recursive = T, full.name = T) ) )
+  }
+  
+  # Running get_parents() on every file available from rs
+  all_ma_parents <- unique(
+    future_map_dfr(paste0("/media/spinner/br_cand_docs/2020/txt/", all_files_ma), get_parents)
+  )
+  
+  # Removing all NAs
+  all_ma_parents <- drop_na(unique(all_ma_parents))
+}
+# PB      # FIXED
+{
+  ########################################################################
+  ########################################################################
+  ####################### RUNNING FUNCTION ON pb #########################
+  ########################################################################
+  ########################################################################
+  
+  
+  # Declaring all files from PB using a FOR LOOP
+  all_files_pb = c()
+  
+  for ( i in 0:length(town_code_pb) ){
+    town_code_pb[i] = toString(town_code_pb[i])
+    all_files_pb = c( all_files_pb, c(list.files(town_code_pb[i], recursive = T, full.name = T) ) )
+  }
+  
+  # Running get_parents() on every file available from rs
+  all_pb_parents <- unique(
+    future_map_dfr(paste0("/media/spinner/br_cand_docs/2020/txt/", all_files_pb), get_parents_pb)
+  )
+  
+  # Removing all NAs
+  all_pb_parents <- drop_na(unique(all_pb_parents))
 }
 
-# Running get_parents() on every file available from mg
-all_mg_parents <- unique(
-                    future_map_dfr(paste0("/media/spinner/br_cand_docs/2020/txt/", all_files_mg), get_parents_sp)
-                    )
+# RO      # FIXED
+{
+  ########################################################################
+  ########################################################################
+  ################# RUNNING FUNCTION ON RONDONIA #########################
+  ########################################################################
+  ########################################################################
+  
+  
+  # Saving all files from all 52 folders within Rondonia
+  all_files_ro = c()
+  
+  for (i in 0:length(town_code_ro)){
+    town_code_ro[i] = toString(town_code_ro[i])
+    all_files_ro = c(all_files_ro, c(list.files(town_code_ro[i], recursive = T, full.name = T)))
+  }
+  
+  
+  # Running get_parents() on every file available from Rondonia
+  all_ro_parents <- unique(
+    future_map_dfr(paste0("/media/spinner/br_cand_docs/2020/txt/", all_files_ro), get_parents)
+  )
+  
+  # Removing all NAs
+  all_ro_parents <- drop_na(unique(all_ro_parents))
+}
+# GO      # NEED TO FIX
+{
+  ########################################################################
+  ########################################################################
+  ###################### RUNNING FUNCTION ON GOIAS #######################
+  ########################################################################
+  ########################################################################
+  
+  
+  # Declaring all files from PR using a FOR LOOP
+  all_files_go = c()
+  
+  for ( i in 0:length(town_code_go) ){
+    town_code_go[i] = toString(town_code_go[i])
+    all_files_go = c( all_files_go, c(list.files(town_code_go[i], recursive = T, full.name = T) ) )
+  }
+  
+  # Running get_parents() on every file available from rs
+  all_go_parents <- unique(
+    future_map_dfr(paste0("/media/spinner/br_cand_docs/2020/txt/", all_files_go), get_parents_go)
+  )
+  
+  # Removing all NAs
+  all_go_parents <- drop_na(unique(all_go_parents))
+}
+# PA      # MOSTLY WORKING; FIX MINOR THINGS
+{
+  ########################################################################
+  ########################################################################
+  ##################### RUNNING FUNCTION ON PARÁ #########################
+  ########################################################################
+  ########################################################################
+  
+  
+  # Declaring all files from PA using a FOR LOOP
+  all_files_pa = c()
+  
+  for ( i in 0:length(town_code_pa) ){
+    town_code_pa[i] = toString(town_code_pa[i])
+    all_files_pa = c( all_files_pa, c(list.files(town_code_pa[i], recursive = T, full.name = T) ) )
+  }
+  
+  # Running get_parents() on every file available from rs
+  all_pa_parents <- unique(
+    future_map_dfr(paste0("/media/spinner/br_cand_docs/2020/txt/", all_files_pa), get_parents_pa)
+  )
+  
+  # Removing all NAs
+  all_pa_parents <- drop_na(unique(all_pa_parents))
+}
 
-head(all_mg_parents)
+# SP      # FIXED
+{
+  ########################################################################
+  ########################################################################
+  ################# RUNNING FUNCTION ON SAO PAULO ########################
+  ########################################################################
+  ########################################################################
+  
+  
+  # Declaring all files from sp using a FOR LOOP
+  all_files_sp = c()
+  
+  for ( i in 0:length(town_code_sp) ){
+    town_code_sp[i] = toString(town_code_sp[i])
+    all_files_sp = c( all_files_sp, c(list.files(town_code_sp[i], recursive = T, full.name = T) ) )
+  }
+  
+  
+  # Running get_parents() on every file available from sp
+  all_sp_parents <- unique(
+    future_map_dfr(paste0("/media/spinner/br_cand_docs/2020/txt/", all_files_sp), get_parents_sp)
+  )
+  
+  
+  # Removing all NAs
+  all_sp_parents <- drop_na(unique(all_sp_parents))
+}
+# MG      # FIXED
+{
+  ########################################################################
+  ########################################################################
+  ################# RUNNING FUNCTION ON MINAS GERAIS #####################
+  ########################################################################
+  ########################################################################
+  
+  
+  # Declaring all files from mg using a FOR LOOP
+  all_files_mg = c()
+  
+  for ( i in 0:length(town_code_mg) ){
+    town_code_mg[i] = toString(town_code_mg[i])
+    all_files_mg = c( all_files_mg, c(list.files(town_code_mg[i], recursive = T, full.name = T) ) )
+  }
+  
+  # Running get_parents() on every file available from mg
+  all_mg_parents <- unique(
+    future_map_dfr(paste0("/media/spinner/br_cand_docs/2020/txt/", all_files_mg), get_parents)
+  )
+  
+  # Removing all NAs
+  all_mg_parents <- drop_na(unique(all_mg_parents))
+}
+# RJ      # NEED TO FIX
+{
+  ########################################################################
+  ###################### RUNNING FUNCTION ON RJ ##########################
+  ########################################################################
+  ########################################################################
+  
+  
+  # Declaring all files from PR using a FOR LOOP
+  all_files_rj = c()
+  
+  for ( i in 0:length(town_code_rj) ){
+    town_code_rj[i] = toString(town_code_rj[i])
+    all_files_rj = c( all_files_rj, c(list.files(town_code_rj[i], recursive = T, full.name = T) ) )
+  }
+  
+  # Running get_parents() on every file available from rs
+  all_rj_parents <- unique(
+    future_map_dfr(paste0("/media/spinner/br_cand_docs/2020/txt/", all_files_rj), get_parents)
+  )
+  
+  # Removing all NAs
+  all_rj_parents <- drop_na(unique(all_rj_parents))
+}
+# ES      # NEED TO FIX
+{
+  ########################################################################
+  ###################### RUNNING FUNCTION ON ES ##########################
+  ########################################################################
+  ########################################################################
+  
+  
+  # Declaring all files from PR using a FOR LOOP
+  all_files_es = c()
+  
+  for ( i in 0:length(town_code_es) ){
+    town_code_es[i] = toString(town_code_es[i])
+    all_files_es = c( all_files_es, c(list.files(town_code_es[i], recursive = T, full.name = T) ) )
+  }
+  
+  # Running get_parents() on every file available from rs
+  all_es_parents <- unique(
+    future_map_dfr(paste0("/media/spinner/br_cand_docs/2020/txt/", all_files_es), get_parents)
+  )
+  
+  # Removing all NAs
+  all_es_parents <- drop_na(unique(all_es_parents))
+}
 
-all_mg_parents_complete <- drop_na(all_mg_parents)
-nrow(all_mg_parents_complete)
-
-
+# RS      # FIXED
+{
+  ########################################################################
+  ########################################################################
+  ############### RUNNING FUNCTION ON RIO GRANDE DO SUL ##################
+  ########################################################################
+  ########################################################################
+  
+  
+  # Declaring all files from RS using a FOR LOOP
+  all_files_rs = c()
+  
+  for ( i in 0:length(town_code_rs) ){
+    town_code_rs[i] = toString(town_code_rs[i])
+    all_files_rs = c( all_files_rs, c(list.files(town_code_rs[i], recursive = T, full.name = T) ) )
+  }
+  
+  # Running get_parents() on every file available from rs
+  all_rs_parents <- unique(
+    future_map_dfr(paste0("/media/spinner/br_cand_docs/2020/txt/", all_files_rs), get_parents_rs)
+  )
+  
+  # Removing all NAs
+  all_rs_parents <- drop_na(unique(all_rs_parents))
+}
+# SC      # FIXED
+{
+  ########################################################################
+  ########################################################################
+  ################ RUNNING FUNCTION ON Santa Catarina ####################
+  ########################################################################
+  ########################################################################
+  
+  
+  # Declaring all files from ps using a FOR LOOP
+  all_files_sc = c()
+  
+  for ( i in 0:length(town_code_sc) ){
+    town_code_sc[i] = toString(town_code_sc[i])
+    all_files_sc = c( all_files_sc, c(list.files(town_code_sc[i], recursive = T, full.name = T) ) )
+  }
+  
+  # Running get_scrents() on every file available from rs
+  all_sc_parents <- unique(
+    future_map_dfr(paste0("/media/spinner/br_cand_docs/2020/txt/", all_files_sc), get_parents)
+  )
+  
+  # Removing all NAs
+  all_sc_parents <- drop_na(unique(all_sc_parents))
+}
+# PR      # NEED TO FIX
+{
+  ########################################################################
+  ########################################################################
+  ##################### RUNNING FUNCTION ON PARANA #######################
+  ########################################################################
+  ########################################################################
+  
+  
+  # Declaring all files from PR using a FOR LOOP
+  all_files_pr = c()
+  
+  for ( i in 0:length(town_code_pr) ){
+    town_code_pr[i] = toString(town_code_pr[i])
+    all_files_pr = c( all_files_pr, c(list.files(town_code_pr[i], recursive = T, full.name = T) ) )
+  }
+  
+  # Running get_parents() on every file available from rs
+  all_pr_parents <- unique(
+    future_map_dfr(paste0("/media/spinner/br_cand_docs/2020/txt/", all_files_pr), get_parents)
+  )
+  
+  # Removing all NAs
+  all_pr_parents <- drop_na(unique(all_pr_parents))
+}
 
 
 ########################################################################
-########################### VIEW DATAFRAMES ############################
+########################################################################
+####################### PCTG OF DATA AVAILABLE #########################
+########################################################################
 ########################################################################
 
 
-view(all_mg_parents_complete)
-view(all_sp_parents_complete)
-view(all_bahia_parents_complete)
-view(all_bahia_parents_complete)
+# Getting all Directories
+all_dirs <- fs::dir_ls("/media/spinner/br_cand_docs/2020/txt/", type = "directory", recurse = TRUE)
+
+# Only keep candidate directories
+all_dirs <- all_dirs[grepl(".*/txt/[0-9]{1,}/[0-9]{1,}$", all_dirs)]
+all_cands <- tibble(cand_code = as.character(gsub(".*/([0-9]{1,})$", "\\1", all_dirs)),
+                    codigo_tse = as.integer(gsub(".*/txt/([0-9]{1,})/.*", "\\1", all_dirs)))
+all_cands <- left_join(all_cands, town_codes)
+
+# Getting total of candidates by State
+table(all_cands$uf)
+# AC   AL   AM   AP   BA   CE   ES   GO   MA   MG   MS   MT   PA   PB   PE   PI   PR   RJ   RN   RO   RR   RS   SC   SE   SP   TO 
+# 90  341  282   92 1366  608  378  881  789 2794  293  482  662  649  660  608 1356  603  521  215   66 1352  921  257 2702  435 
+
+
+# Getting pctg. of candidates with parents data available, by state
+t(
+  as.matrix(
+    c(    
+      round((length(unique(all_pi_parents$candidate)) / table(all_cands$uf)["PI"]), 3),
+      round((length(unique(all_ba_parents$candidate)) / table(all_cands$uf)["BA"]), 3),
+      round((length(unique(all_rn_parents$candidate)) / table(all_cands$uf)["RN"]), 3),
+      round((length(unique(all_es_parents$candidate)) / table(all_cands$uf)["ES"]), 3),
+      round((length(unique(all_sc_parents$candidate)) / table(all_cands$uf)["SC"]), 3),
+      round((length(unique(all_rs_parents$candidate)) / table(all_cands$uf)["RS"]), 3),
+      round((length(unique(all_pe_parents$candidate)) / table(all_cands$uf)["PE"]), 3),
+      round((length(unique(all_pb_parents$candidate)) / table(all_cands$uf)["PB"]), 3),
+      round((length(unique(all_se_parents$candidate)) / table(all_cands$uf)["SE"]), 3),
+      round((length(unique(all_sp_parents$candidate)) / table(all_cands$uf)["SP"]), 3),
+      round((length(unique(all_mg_parents$candidate)) / table(all_cands$uf)["MG"]), 3),
+      round((length(unique(all_pa_parents$candidate)) / table(all_cands$uf)["PA"]), 3),
+      round((length(unique(all_pr_parents$candidate)) / table(all_cands$uf)["PR"]), 3),
+      round((length(unique(all_rj_parents$candidate)) / table(all_cands$uf)["RJ"]), 3),
+      round((length(unique(all_ce_parents$candidate)) / table(all_cands$uf)["CE"]), 3),
+      round((length(unique(all_ma_parents$candidate)) / table(all_cands$uf)["MA"]), 3),
+      round((length(unique(all_ro_parents$candidate)) / table(all_cands$uf)["RO"]), 3),
+      round((length(unique(all_go_parents$candidate)) / table(all_cands$uf)["GO"]), 3)
+    )
+  )
+)
+
+#         PI    BA    RN    ES    SC    RS    PE    PB    SE    SP    MG   PA   PR    RJ    CE    MA    RO    GO
+# [1,] 0.967 0.963 0.956 0.921 0.876 0.874 0.873 0.814 0.813 0.774 0.722 0.63 0.35 0.277 0.225 0.219 0.233 0.116
+
+
+########################################################################
+########################################################################
+################# TIBBLES TO CHECK FOR MISSING NAMES ###################
+########################################################################
+########################################################################
+
+
+# Tibble with unique candidates and whether parents data is available or not (MG)
+all_cands_mg <- filter(all_cands, uf == "MG")
+all_cands_mg$found_parents <- ifelse(all_cands_mg$cand_code %in% all_mg_parents$candidate, TRUE, FALSE)
+head(all_cands_mg)
+
+# Removing state town_codes - no longer need them
+rm(list = ls(pattern = "town_code_"), i, all_dirs)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
